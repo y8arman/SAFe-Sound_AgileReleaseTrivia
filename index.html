@@ -227,13 +227,13 @@
   .ok{color:var(--ok);} .bad{color:var(--bad);}
 
   /* leaderboard */
-  #lbwrap{width:100%; max-width:900px; flex:1; min-height:0; display:flex; flex-direction:column;}
+  #lbwrap{width:100%; max-width:900px; flex:1; min-height:0; display:flex; flex-direction:column; overflow-y:auto;}
   #lb{position:relative; flex:1; min-height:0; margin-top:10px;}
   .lbrow{position:absolute; left:0; right:0; display:grid; grid-template-columns:46px 40px 1fr auto auto;
     gap:10px; align-items:center; padding:0 14px; border-radius:12px;
     background:var(--panel); border:1px solid var(--line);
     transition:transform .7s cubic-bezier(.2,.85,.25,1), opacity .4s;}
-  .lbrow.hidden{opacity:0; pointer-events:none;}
+  .lbrow.hidden{opacity:0 !important; visibility:hidden; pointer-events:none;}
   .lbrow .rk{font-weight:900; font-size:1.05em; color:var(--dim);}
   .lbrow .em{font-size:1.25em;}
   .lbrow .nm{font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -457,15 +457,18 @@
   </div></section>
 
   <section id="s-fh" class="screen"><div class="wrap">
-    <h1 class="glow" style="font-size:clamp(1.4rem,4vw,2.2rem); margin-top:4px;">🏁 End of the line</h1>
+    <h1 class="glow" id="fhTitle" style="font-size:clamp(1.4rem,4vw,2.2rem); margin-top:4px;">🎉 And your winners are...</h1>
     <div id="podium">
       <div class="pod g2" id="pod2"><div class="mdl">🥈</div><div class="pem"></div><div class="pnm"></div><div class="psc"></div><span class="bar"></span></div>
-      <div class="pod g1" id="pod1"><div class="mdl">👑</div><div class="pem"></div><div class="pnm"></div><div class="psc"></div><span class="bar"></span></div>
+      <div class="pod g1" id="pod1"><div class="mdl">🥇</div><div class="pem"></div><div class="pnm"></div><div class="psc"></div><span class="bar"></span></div>
       <div class="pod g3" id="pod3"><div class="mdl">🥉</div><div class="pem"></div><div class="pnm"></div><div class="psc"></div><span class="bar"></span></div>
     </div>
-    <div class="manif-title">Full passenger manifest</div>
-    <div id="manifest"></div>
-    <div class="btnrow" style="margin-top:10px;"><button class="btn ghost" id="btnAgain">Run it again 🔁</button></div>
+    <div class="manif-title" id="mtTitle" hidden>Full passenger manifest</div>
+    <div id="manifest" hidden></div>
+    <div class="btnrow" style="margin-top:10px;">
+      <button class="btn" id="btnCeleb" hidden>End celebration 🛎️</button>
+      <button class="btn ghost" id="btnAgain" hidden>Run it again 🔁</button>
+    </div>
   </div></section>
 
   <section id="s-fp" class="screen"><div class="wrap" style="justify-content:center;">
@@ -485,7 +488,7 @@
 <div id="statusbar">
   <span class="dot" id="conn"></span><span id="connt">connecting…</span>
   <span id="sbcode" class="mono"></span>
-  <button id="vtag" class="mono">SAFe&amp;SOUND v1.3 (2026-07-25)</button>
+  <button id="vtag" class="mono">SAFe&amp;SOUND v1.4 (2026-07-25)</button>
 </div>
 <div id="debug" hidden>
   <h3>🔧 Debug panel</h3>
@@ -517,7 +520,7 @@ const firebaseConfig = {
 };
 /* ===================================================================== */
 
-const APP_VERSION='v1.3 (2026-07-25)';
+const APP_VERSION='v1.4 (2026-07-25)';
 const ROOT='st_games';
 const PICK_N=10, TOP_N=10, COUNTDOWN_MS=3000, CALL_TIMEOUT=9000;
 
@@ -595,9 +598,9 @@ function toast(msg){const t=$('#toast'); t.textContent=msg; t.classList.add('sho
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),5200);}
 window.addEventListener('error',ev=>{
   const where=ev.filename?(' @ '+String(ev.filename).split('/').pop()+':'+ev.lineno):'';
-  logErr('window',((ev.error&&ev.error.message)||ev.message||'error')+where);
+  logErr('E19 window',((ev.error&&ev.error.message)||ev.message||'error')+where);
 });
-window.addEventListener('unhandledrejection',ev=>logErr('promise',ev.reason));
+window.addEventListener('unhandledrejection',ev=>logErr('E20 promise',ev.reason));
 
 function withTimeout(p){return new Promise((res,rej)=>{
   const to=setTimeout(()=>rej(new Error('timeout after '+(CALL_TIMEOUT/1000)+'s')),CALL_TIMEOUT);
@@ -618,15 +621,15 @@ function validatePools(){
   let n=0, bad=0;
   for(const k in LESSONS){
     const pool=QUESTIONS[k];
-    if(!Array.isArray(pool)||pool.length<PICK_N){logErr('pools',k+' missing or under '+PICK_N+' questions'); bad++; continue;}
+    if(!Array.isArray(pool)||pool.length<PICK_N){logErr('E18 pools',k+' missing or under '+PICK_N+' questions'); bad++; continue;}
     pool.forEach((x,i)=>{n++;
-      if(!x||typeof x.q!=='string'||!Array.isArray(x.options)||x.options.length<2||x.options.length>4){logErr('pools',k+'#'+i+' bad shape'); bad++;}
-      else if(!Number.isInteger(x.answer)||x.answer<0||x.answer>=x.options.length){logErr('pools',k+'#'+i+' answer index out of range'); bad++;}
-      else if(!(x.time>=10&&x.time<=60)){logErr('pools',k+'#'+i+' bad time'); bad++;}
+      if(!x||typeof x.q!=='string'||!Array.isArray(x.options)||x.options.length<2||x.options.length>4){logErr('E18 pools',k+'#'+i+' bad shape'); bad++;}
+      else if(!Number.isInteger(x.answer)||x.answer<0||x.answer>=x.options.length){logErr('E18 pools',k+'#'+i+' answer index out of range'); bad++;}
+      else if(!(x.time>=10&&x.time<=60)){logErr('E18 pools',k+'#'+i+' bad time'); bad++;}
     });
   }
   if(bad===0)console.info('[S&S] Question pools OK: '+n+' questions across '+Object.keys(LESSONS).length+' lessons.');
-  else toast('⚠ Question pool validation failed ('+bad+' issue(s)). Tap the version tag.');
+  else toast('⚠ E18 question pool validation failed ('+bad+' issue(s)). Tap the version tag.');
 }
 
 /* ---------------- audio (Web Audio synth, no files) ---------------- */
@@ -634,7 +637,8 @@ let AC=null;
 function ensureAudio(){try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();}
   if(AC.state==='suspended')AC.resume();}catch(e){}}
 function tone(f,dur,type,vol,when,slide){try{
-  if(!AC)return; const t0=AC.currentTime+(when||0);
+  if(!AC)return; if(AC.state!=='running'){try{AC.resume();}catch(x){}}
+  const t0=AC.currentTime+(when||0);
   const o=AC.createOscillator(), g=AC.createGain();
   o.type=type||'sine'; o.frequency.setValueAtTime(f,t0);
   if(slide)o.frequency.exponentialRampToValueAtTime(slide,t0+dur);
@@ -644,7 +648,8 @@ function tone(f,dur,type,vol,when,slide){try{
   o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0+dur+0.05);
 }catch(e){}}
 function nz(dur,vol,when,fc){try{
-  if(!AC)return; const t0=AC.currentTime+(when||0);
+  if(!AC)return; if(AC.state!=='running'){try{AC.resume();}catch(x){}}
+  const t0=AC.currentTime+(when||0);
   const len=Math.max(1,Math.floor(AC.sampleRate*dur));
   const b=AC.createBuffer(1,len,AC.sampleRate), d=b.getChannelData(0);
   for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
@@ -665,7 +670,15 @@ const SFX={
   swish(){nz(0.16,0.09,0,700);},
   chug(k){for(let i=0;i<Math.min(k,4);i++)nz(0.08,0.07,i*0.1,300);},
   drum(){for(let i=0;i<16;i++)nz(0.05,0.07,i*(0.16-i*0.006),500);},
-  fanfare(){[523,659,784].forEach(f=>tone(f,0.9,'triangle',0.09,0)); tone(1047,0.9,'triangle',0.1,0.15); [523,659,784,1047].forEach(f=>tone(f,1.1,'sine',0.06,0.5));}
+  fanfare(){[523,659,784].forEach(f=>tone(f,0.9,'triangle',0.09,0)); tone(1047,0.9,'triangle',0.1,0.15); [523,659,784,1047].forEach(f=>tone(f,1.1,'sine',0.06,0.5));},
+  pop(){nz(0.12,0.1,0,2200);},
+  party(){[659,784,988,1319].forEach((f,i)=>tone(f,0.18,'triangle',0.09,i*0.07));
+    tone(1568,0.4,'sine',0.07,0.32); nz(0.14,0.08,0.15,2000); nz(0.14,0.07,0.5,2600);},
+  results(good,answered,total){
+    if(total>0&&good>=total){this.fanfare(); nz(0.25,0.07,0.25,2400);}
+    else if(good>0){[392,523,659,784].forEach((f,i)=>tone(f,0.15,'triangle',0.1,i*0.06)); tone(1047,0.4,'triangle',0.1,0.26);}
+    else{tone(196,0.5,'sawtooth',0.09,0,140); nz(0.3,0.06,0.05,300);}
+  }
 };
 function vibOK(){vib([40,60,40]);}
 
@@ -679,7 +692,7 @@ function now(){return Date.now()+S.off;}
 function gref(){return db.ref(ROOT+'/'+S.code);}
 
 /* ---------------- boot / firebase ---------------- */
-function showSetup(msg){const b=$('#setupBanner'); b.textContent='⚠ SETUP NEEDED: '+msg; b.style.display='block'; logErr('setup',msg);}
+function showSetup(msg){const b=$('#setupBanner'); b.textContent='⚠ SETUP NEEDED: '+msg; b.style.display='block'; logErr('E03 setup',msg);}
 function setConn(ok){S.everConn=S.everConn||ok;
   $('#conn').className='dot'+(ok?' on':''); $('#connt').textContent=ok?'live':'offline';}
 function initFB(){
@@ -690,10 +703,10 @@ function initFB(){
     db.ref('.info/serverTimeOffset').on('value',s=>{S.off=s.val()||0;});
     db.ref('.info/connected').on('value',s=>setConn(!!s.val()));
     setTimeout(()=>{if(!S.everConn){
-      toast('⚠ No Firebase connection after 9s. Check databaseURL and the database rules. Tap the version tag for the log.');
-      logErr('connect','no connection within 9s');}},CALL_TIMEOUT);
+      toast('⚠ E02 no Firebase connection after 9s. Check databaseURL and the database rules. Tap the version tag for the log.');
+      logErr('E02 connect','no connection within 9s');}},CALL_TIMEOUT);
     return true;
-  }catch(e){logErr('init',e); showSetup('Firebase failed to start: '+(e.message||e)); return false;}
+  }catch(e){logErr('E01 init',e); showSetup('Firebase failed to start: '+(e.message||e)); return false;}
 }
 
 /* ---------------- navigation ---------------- */
@@ -741,9 +754,9 @@ async function createGame(lesson){
   ensureAudio();
   for(let t=0;t<5;t++){
     const code=genCode();
-    const ex=await fb('check code',db.ref(ROOT+'/'+code+'/createdAt').get());
+    const ex=await fb('E04 check code',db.ref(ROOT+'/'+code+'/createdAt').get());
     if(ex.exists())continue;
-    await fb('create game',db.ref(ROOT+'/'+code).set(
+    await fb('E04 create game',db.ref(ROOT+'/'+code).set(
       {createdAt:TS(),version:APP_VERSION,lesson,phase:'lobby',qIndex:-1}));
     S.role='host'; S.code=code; S.revealed={}; saveSess(); attach(); SFX.ding();
     return;
@@ -756,7 +769,7 @@ async function addBots(){
   const upd={};
   BOTN.forEach((nm,i)=>{upd['players/bot'+(i+1)]={name:nm,emoji:EMOJIS[(i*5)%EMOJIS.length],
     score:0,streak:0,lastPoints:0,lastCorrect:false,joinedAt:Date.now()+i,online:true,bot:true};});
-  await fb('add bots',gref().update(upd));
+  await fb('E14 add bots',gref().update(upd));
   toast('🤖 15 bots boarded. Toot toot.');
 }
 function scheduleBots(g){
@@ -773,7 +786,7 @@ function scheduleBots(g){
         do{c=Math.floor(Math.random()*dq.opts.length);}while(c===dq.correctDisplay);
       }
       db.ref(ROOT+'/'+S.code+'/answers/'+i+'/'+pid).set({c,at:TS()})
-        .catch(e=>logErr('bot answer',e));
+        .catch(e=>logErr('E13 bot answer',e));
     },wait);
     S.botTimers.push(t);
   }
@@ -786,7 +799,7 @@ async function joinGame(){
   const code=$('#inCode').value.trim().toUpperCase();
   const name=($('#inName').value.trim()||'Passenger').slice(0,16);
   if(code.length!==4){toast('Enter the 4-letter game code.'); return;}
-  const snap=await fb('find game',db.ref(ROOT+'/'+code+'/createdAt').get());
+  const snap=await fb('E05 find game',db.ref(ROOT+'/'+code+'/createdAt').get());
   if(!snap.exists()){toast('No train at code '+code+'. Check the code with the host.'); return;}
   S.role='player'; S.code=code; S.name=name; S.emoji=curEmoji;
   let pid=null; try{pid=sessionStorage.getItem('ss_pid_'+code);}catch(e){}
@@ -794,10 +807,10 @@ async function joinGame(){
     try{sessionStorage.setItem('ss_pid_'+code,pid);}catch(e){}}
   S.pid=pid;
   const me=db.ref(ROOT+'/'+code+'/players/'+pid);
-  const ex=await fb('join',me.get());
+  const ex=await fb('E06 join',me.get());
   const base={name,emoji:S.emoji,online:true};
   if(!ex.exists())Object.assign(base,{score:0,streak:0,lastPoints:0,lastCorrect:false,joinedAt:TS()});
-  await fb('board',me.update(base));
+  await fb('E06 board',me.update(base));
   me.onDisconnect().update({online:false});
   saveSess(); attach(); vib([20]);
 }
@@ -809,11 +822,11 @@ function attach(){
     const g=snap.val();
     if(!g){if(S.game){toast('The game was ended by the host.'); leave();} return;}
     S.game=g; render();
-  },e=>{logErr('stream',e); toast('⚠ Lost the game stream: '+(e.code||e.message));});
+  },e=>{logErr('E08 stream',e); toast('⚠ E08 lost the game stream: '+(e.code||e.message));});
   if(S.role==='player'&&S.pid){
     stopRail();
     const me=db.ref(ROOT+'/'+S.code+'/players/'+S.pid);
-    me.update({online:true}).catch(e=>logErr('online',e));
+    me.update({online:true}).catch(e=>logErr('E07 online',e));
     me.onDisconnect().update({online:false});
   }
 }
@@ -829,7 +842,7 @@ async function resumeOrLand(){
         if(S.role==='host')startRail();
         attach(); toast('Reboarded game '+s.code+'.'); return;
       }
-    }catch(e){logErr('resume',e);}
+    }catch(e){logErr('E09 resume',e);}
     try{sessionStorage.removeItem('ss_sess');}catch(e){}
   }
   go('s-landing');
@@ -840,7 +853,7 @@ async function startQuestion(i){
   const g=S.game; if(!g)return;
   const upd={phase:'question',qIndex:i,questionStartAt:TS(),quip:null};
   if(i===0)upd.deck=makeDeck(g.lesson);
-  await fb('start stop '+(i+1),gref().update(upd));
+  await fb('E10 start stop '+(i+1),gref().update(upd));
 }
 async function hostReveal(){
   const g=S.game;
@@ -882,8 +895,8 @@ async function hostReveal(){
     }
     upd.phase='reveal';
     upd.quip=pickQuip(res);
-    await fb('reveal',gref().update(upd));
-  }catch(e){S.revealed[i]=false; logErr('reveal',e);}
+    await fb('E11 reveal',gref().update(upd));
+  }catch(e){S.revealed[i]=false; logErr('E11 reveal',e);}
 }
 function biggestClimb(res){
   const sorted=res.slice().sort((x,y)=>y.newScore-x.newScore||x.joinedAt-y.joinedAt);
@@ -936,6 +949,7 @@ function onEnter(g,ph){
   cancelAnimationFrame(S.raf);
   if(ph==='question'){
     S.goPlayed[g.qIndex]=false;
+    lastCd=99;
     if(g.qIndex===0)SFX.whistle(); else SFX.ding();
     if(S.role==='host')scheduleBots(g);
     qLoop();
@@ -947,7 +961,15 @@ function onEnter(g,ph){
     if(S.role==='player'){
       const me=(g.players||{})[S.pid]||{};
       if(me.lastAnswered){ if(me.lastCorrect){SFX.right(); if(me.streak>=2)SFX.chug(me.streak);} else {SFX.wrong(); vib([120]);} }
-    } else SFX.swish();
+    } else {
+      try{
+        const dq=deckQ(g,g.qIndex);
+        const ans=(g.answers&&g.answers[g.qIndex])||{};
+        let good=0,tot=0;
+        for(const pid in ans){tot++; if(ans[pid].c===dq.correctDisplay)good++;}
+        SFX.results(good,tot,Object.keys(g.players||{}).length);
+      }catch(e){logErr('E21 reveal sound',e);}
+    }
   }
   if(ph==='board')SFX.swish();
   if(ph==='final'){ if(S.role==='host')runPodium(g); else runPlayerFinal(g); }
@@ -965,7 +987,7 @@ function renderHost(g,ph,entered){
       const url=location.origin+location.pathname+'?join='+S.code;
       const a=$('#joinlink'); a.href=url; a.textContent=url;
       try{new QRCode($('#qr'),{text:url,width:224,height:224,correctLevel:QRCode.CorrectLevel.M});}
-      catch(e){logErr('qr',e); $('#qr').textContent='QR unavailable. Use the link below.';}
+      catch(e){logErr('E17 qr',e); $('#qr').textContent='QR unavailable. Use the link below.';}
     }
     const arr=playersArr(g).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
     const tr=$('#train'); const prevN=tr.childElementCount;
@@ -1032,7 +1054,7 @@ function renderHost(g,ph,entered){
     go('s-board');
     $('#lbStop').textContent='After stop '+(g.qIndex+1)+' of '+g.deck.length;
     $('#nextRow').style.display='';
-    $('#btnNext').textContent=(g.qIndex<g.deck.length-1)?'Next stop 🚉':'Finale 🏁';
+    $('#btnNext').textContent=(g.qIndex<g.deck.length-1)?'Next stop 🚉':'Celebrate 🎉';
     renderBoard(g);
     $('#youline').textContent='';
     return;
@@ -1117,7 +1139,7 @@ async function answer(i,ix,btnEl){
   btnEl.classList.add('pick'); SFX.click(); vib([15]);
   setTimeout(()=>{$('#qpOpts').style.display='none'; $('#punched').style.display='block';},220);
   try{
-    await fb('send answer',db.ref(ROOT+'/'+S.code+'/answers/'+i+'/'+S.pid).set({c:ix,at:TS()}));
+    await fb('E12 send answer',db.ref(ROOT+'/'+S.code+'/answers/'+i+'/'+S.pid).set({c:ix,at:TS()}));
   }catch(e){
     delete S.localAns[i];
     $('#qpOpts').style.display=''; $('#punched').style.display='none';
@@ -1166,11 +1188,13 @@ function qLoop(){
 function renderBoard(g){
   const box=$('#lb');
   const arr=playersArr(g);
-  const top=arr.slice(0,TOP_N);
+  const uncapped=!!(g.deck&&g.qIndex>=g.deck.length-1);
+  const top=uncapped?arr:arr.slice(0,TOP_N);
   const n=Math.max(1,top.length);
-  const avail=box.clientHeight||300;
+  const avail=Math.max(140,($('#lbwrap').clientHeight||300)-34);
   const gap=6;
-  const rowH=clamp(Math.floor(avail/n)-gap,32,62);
+  const rowH=clamp(Math.floor(avail/n)-gap,uncapped?22:32,62);
+  box.style.height=(n*(rowH+gap))+'px';
   const inTop={};
   top.forEach((p,ix)=>{
     inTop[p.id]=true;
@@ -1187,7 +1211,7 @@ function renderBoard(g){
       row.style.opacity='0';
     }
     row.style.height=rowH+'px';
-    row.style.fontSize=clamp(rowH*0.36,12,20)+'px';
+    row.style.fontSize=clamp(rowH*0.38,10,20)+'px';
     row.className='lbrow'+(ix<3?(' p'+(ix+1)):'')+((p.id===S.pid)?' me':'');
     row.children[0].textContent='#'+(ix+1);
     row.children[1].textContent=p.emoji||'🚂';
@@ -1201,14 +1225,16 @@ function renderBoard(g){
       requestAnimationFrame(()=>{row.style.transition='';
         row.style.transform='translateY('+y+'px)'; row.style.opacity='1';});
     }else{
+      row.style.opacity='1';
       row.style.transform='translateY('+y+'px)';
       if(prevY!=null&&y<prevY){row.classList.remove('climb'); void row.offsetWidth; row.classList.add('climb');}
     }
     row._y=y;
   });
   for(const id in S.rows){
-    if(!inTop[id])S.rows[id].classList.add('hidden');
-    else S.rows[id].classList.remove('hidden');
+    const r=S.rows[id];
+    if(!inTop[id]){r.classList.add('hidden'); r.style.opacity='';}
+    else r.classList.remove('hidden');
   }
 }
 function countUp(elm,from,to){
@@ -1222,11 +1248,11 @@ function countUp(elm,from,to){
   requestAnimationFrame(step);
 }
 
-/* ---------------- final screens ---------------- */
+/* ---------------- final screens + celebration ---------------- */
+let celebOn=false, celebSnd=0, celebRaf=0;
 function runPodium(g){
   const arr=playersArr(g);
-  const slots=[['#pod1',0],['#pod2',1],['#pod3',2]];
-  slots.forEach(([sel,ix])=>{
+  [['#pod1',0],['#pod2',1],['#pod3',2]].forEach(([sel,ix])=>{
     const p=arr[ix], e=$(sel);
     e.querySelector('.pem').textContent=p?(p.emoji||'🚂'):'·';
     e.querySelector('.pnm').textContent=p?(p.name||'Passenger'):'·';
@@ -1242,42 +1268,90 @@ function runPodium(g){
     c.appendChild(el('span','ms',String(p.score||0)));
     man.appendChild(c);
   });
-  if(RM){slots.forEach(([sel])=>$(sel).classList.add('in')); SFX.fanfare(); return;}
+  $('#fhTitle').textContent='🎉 And your winners are...';
+  $('#mtTitle').hidden=true; man.hidden=true;
+  $('#btnAgain').hidden=true; $('#btnCeleb').hidden=true;
+  if(RM){
+    ['#pod1','#pod2','#pod3'].forEach(s=>$(s).classList.add('in'));
+    SFX.fanfare(); finishFinal(); return;
+  }
   setTimeout(()=>{$('#pod3').classList.add('in'); SFX.ding();},400);
   setTimeout(()=>{$('#pod2').classList.add('in'); SFX.ding();},1600);
   setTimeout(()=>SFX.drum(),2600);
-  setTimeout(()=>{$('#pod1').classList.add('in'); SFX.fanfare(); confetti();},4300);
+  setTimeout(()=>{$('#pod1').classList.add('in'); startCelebration();},4300);
+}
+function startCelebration(){
+  celebOn=true;
+  $('#btnCeleb').hidden=false;
+  SFX.fanfare(); vibOK();
+  clearInterval(celebSnd);
+  celebSnd=setInterval(()=>{if(celebOn)SFX.party();},2600);
+  celebLoop();
+}
+function finishFinal(){
+  $('#fhTitle').textContent='🏁 End of the line';
+  $('#mtTitle').hidden=false; $('#manifest').hidden=false;
+  $('#btnAgain').hidden=false; $('#btnCeleb').hidden=true;
+}
+function endCelebration(){
+  celebOn=false;
+  clearInterval(celebSnd);
+  cancelAnimationFrame(celebRaf);
+  const cv=$('#confc'); cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+  SFX.ding();
+  finishFinal();
+}
+function celebLoop(){
+  const cv=$('#confc'), ctx=cv.getContext('2d');
+  cv.width=innerWidth; cv.height=innerHeight;
+  const cols=['#fbbf24','#f472b6','#34d399','#60a5fa','#fb923c','#eaf2ff'];
+  const ps=[]; let lastB=0, lastC=0;
+  function burst(){
+    const cx=cv.width*(0.15+Math.random()*0.7), cy=cv.height*(0.12+Math.random()*0.33);
+    const c=cols[Math.floor(Math.random()*cols.length)];
+    for(let k=0;k<26;k++){
+      const a=Math.PI*2*k/26, sp=2+Math.random()*3.2;
+      ps.push({f:1,x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,c:c});
+    }
+  }
+  function frame(t){
+    if(!celebOn){ctx.clearRect(0,0,cv.width,cv.height); return;}
+    if(t-lastB>700){lastB=t; burst();}
+    if(t-lastC>130){lastC=t;
+      for(let k=0;k<5;k++)ps.push({f:0,x:Math.random()*cv.width,y:-12,
+        vx:(Math.random()-0.5)*2,vy:2+Math.random()*3,s:4+Math.random()*6,
+        c:cols[k%cols.length],r:Math.random()*Math.PI,vr:(Math.random()-0.5)*0.25,life:1});
+    }
+    ctx.clearRect(0,0,cv.width,cv.height);
+    for(let i=ps.length-1;i>=0;i--){
+      const p=ps[i];
+      if(p.f){
+        p.x+=p.vx; p.y+=p.vy; p.vy+=0.045; p.life-=0.016;
+        ctx.globalAlpha=Math.max(p.life,0); ctx.fillStyle=p.c;
+        ctx.beginPath(); ctx.arc(p.x,p.y,2.4,0,6.283); ctx.fill();
+      }else{
+        p.x+=p.vx; p.y+=p.vy; p.vy+=0.02; p.r+=p.vr;
+        ctx.globalAlpha=1; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+        ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6); ctx.restore();
+      }
+      if(p.life<=0||p.y>cv.height+30)ps.splice(i,1);
+    }
+    ctx.globalAlpha=1;
+    if(ps.length>800)ps.splice(0,ps.length-800);
+    celebRaf=requestAnimationFrame(frame);
+  }
+  celebRaf=requestAnimationFrame(frame);
 }
 function runPlayerFinal(g){
   const arr=playersArr(g);
   const r=arr.findIndex(p=>p.id===S.pid);
   const me=r>=0?arr[r]:{score:0};
   $('#fpPlace').textContent=r>=0?('#'+(r+1)):'·';
-  $('#fpEm').textContent=(r===0)?'👑':(r===1)?'🥈':(r===2)?'🥉':(S.emoji||'🚂');
+  $('#fpEm').textContent=(r===0)?'🥇':(r===1)?'🥈':(r===2)?'🥉':(S.emoji||'🚂');
   $('#fpNm').textContent=S.name;
   $('#fpSc').textContent=(me.score||0)+' pts';
   $('#fpQ').textContent=F_PLACE[Math.min(r<0?3:r,3)];
   if(r>=0&&r<3){SFX.fanfare(); vibOK();}else SFX.ding();
-}
-
-/* ---------------- confetti + background rail (host) ---------------- */
-function confetti(){
-  if(RM)return;
-  const cv=$('#confc'); const ctx=cv.getContext('2d');
-  cv.width=innerWidth; cv.height=innerHeight;
-  const cols=[getComputedStyle(document.body).getPropertyValue('--a1').trim(),'#fbbf24','#f472b6','#34d399','#eaf2ff'];
-  const ps=[];
-  for(let i=0;i<150;i++)ps.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.4,
-    vx:(Math.random()-0.5)*2.4,vy:2+Math.random()*3.4,s:4+Math.random()*6,
-    c:cols[i%cols.length],r:Math.random()*Math.PI,vr:(Math.random()-0.5)*0.25});
-  const t0=performance.now();
-  (function tick(t){
-    ctx.clearRect(0,0,cv.width,cv.height);
-    ps.forEach(p=>{p.x+=p.vx; p.y+=p.vy; p.vy+=0.02; p.r+=p.vr;
-      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
-      ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6); ctx.restore();});
-    if(t-t0<4200)requestAnimationFrame(tick); else ctx.clearRect(0,0,cv.width,cv.height);
-  })(t0);
 }
 let railOn=false, railRaf=0, railFit=false;
 function stopRail(){
@@ -1412,13 +1486,16 @@ function wire(){
   $('#btnBoard').addEventListener('click',ev=>busy(ev.currentTarget,joinGame));
   $('#btnStart').addEventListener('click',ev=>busy(ev.currentTarget,()=>{SFX.whistle(); return startQuestion(0);}));
   $('#btnReveal').addEventListener('click',ev=>busy(ev.currentTarget,hostReveal));
-  $('#btnBoardShow').addEventListener('click',ev=>busy(ev.currentTarget,()=>fb('show board',gref().update({phase:'board'}))));
+  $('#btnBoardShow').addEventListener('click',ev=>busy(ev.currentTarget,()=>fb('E15 show board',gref().update({phase:'board'}))));
   $('#btnNext').addEventListener('click',ev=>busy(ev.currentTarget,()=>{
     const g=S.game;
     if(g.qIndex<g.deck.length-1)return startQuestion(g.qIndex+1);
-    return fb('finale',gref().update({phase:'final'}));
+    return fb('E16 finale',gref().update({phase:'final'}));
   }));
   $('#btnAgain').addEventListener('click',()=>leave());
+  $('#btnCeleb').addEventListener('click',()=>endCelebration());
+  document.addEventListener('pointerdown',()=>ensureAudio(),{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureAudio();});
   $('#vtag').addEventListener('click',()=>{const d=$('#debug'); d.hidden=!d.hidden; renderDebug();});
   $('#dbClose').addEventListener('click',()=>{$('#debug').hidden=true;});
   $('#dbCopy').addEventListener('click',()=>{
