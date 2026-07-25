@@ -330,6 +330,22 @@
     color:var(--gold); background:rgba(0,0,0,.5); border:1px solid rgba(251,191,36,.4);
     border-radius:7px; padding:7px 10px;}
 
+  .vans{margin-top:14px; font-size:.92rem; color:var(--dim); max-width:520px; line-height:1.5;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 14px;
+    white-space:pre-line; text-align:left;}
+  #dblBan{position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:25;
+    background:rgba(60,35,0,.92); border:1px solid var(--gold); color:var(--gold);
+    font-weight:900; letter-spacing:.12em; padding:8px 16px; border-radius:10px;
+    font-size:clamp(.68rem,2vw,1rem); white-space:nowrap;
+    animation:dblp 1s ease-in-out infinite alternate;}
+  @keyframes dblp{from{box-shadow:0 0 6px rgba(251,191,36,.3);} to{box-shadow:0 0 24px rgba(251,191,36,.85);}}
+  #fpConf{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:5;}
+  #fpConf i{position:absolute; top:-8%; font-style:normal; animation-name:fpfall;
+    animation-timing-function:linear; animation-fill-mode:forwards;}
+  @keyframes fpfall{to{transform:translateY(125vh) rotate(300deg);}}
+  #vtag.err{border-color:var(--bad); color:#fecaca;}
+  #waitAnn{transition:opacity .3s; min-height:2.6em; max-width:460px;}
+
   @media (max-width:640px){
     .opts{grid-template-columns:1fr;}
     .lobbygrid{grid-template-columns:1fr;}
@@ -403,6 +419,7 @@
     <h1 style="font-size:clamp(1.4rem,6vw,2rem); margin-top:8px;">You're aboard, <span id="waitNm"></span>!</h1>
     <div class="sub" style="letter-spacing:.15em; margin-top:10px;">Waiting at the platform</div>
     <div class="board mono" id="waitCt" style="margin-top:16px;">1 PASSENGER ABOARD</div>
+    <div class="hint" id="waitAnn"></div>
     <div class="hint">Watch the big screen. The host starts the train.</div>
   </div></section>
 
@@ -444,6 +461,7 @@
       <div class="vpt" id="vPt"></div>
       <div class="vst" id="vSt"></div>
       <div class="vq" id="vQ"></div>
+      <div class="vans" id="vAns"></div>
     </div>
   </div></section>
 
@@ -476,6 +494,7 @@
     <div style="font-size:2.2rem; margin-top:4px;" id="fpEm"></div>
     <div style="font-weight:900; font-size:1.4rem;" id="fpNm"></div>
     <div style="color:var(--dim); font-weight:800; margin-top:6px;" id="fpSc"></div>
+    <div class="vans" id="fpStats" style="text-align:center;"></div>
     <div class="vq" style="color:var(--gold); font-weight:700; margin-top:14px; text-align:center; max-width:420px;" id="fpQ"></div>
     <div class="credit">Terrific Transport Corporation thanks you for traveling.</div>
   </div></section>
@@ -483,16 +502,21 @@
 </div>
 
 <div id="cdov"><div id="cdnum"></div></div>
+<div id="dblBan" class="mono" hidden>🚨 FINAL STOP · POINTS PAY DOUBLE 🚨</div>
+<div id="fpConf"></div>
 <canvas id="confc"></canvas>
 <div id="toast" role="alert"></div>
 <div id="statusbar">
   <span class="dot" id="conn"></span><span id="connt">connecting…</span>
   <span id="sbcode" class="mono"></span>
-  <button id="vtag" class="mono">SAFe&amp;SOUND v1.4 (2026-07-25)</button>
+  <button id="vtag" class="mono">SAFe&amp;SOUND v1.5 (2026-07-25)</button>
 </div>
 <div id="debug" hidden>
   <h3>🔧 Debug panel</h3>
+  <div class="hint" style="text-align:left; margin:2px 0 8px;">Built by Yusuf Barman (BarY) · GitHub: y8arman</div>
   <pre id="dbmeta"></pre>
+  <h3>Phase history (newest first)</h3>
+  <pre id="dbtrace"></pre>
   <h3>Error log (newest first)</h3>
   <pre id="dblog"></pre>
   <div class="btnrow">
@@ -520,7 +544,7 @@ const firebaseConfig = {
 };
 /* ===================================================================== */
 
-const APP_VERSION='v1.4 (2026-07-25)';
+const APP_VERSION='v1.5 (2026-07-25)';
 const ROOT='st_games';
 const PICK_N=10, TOP_N=10, COUNTDOWN_MS=3000, CALL_TIMEOUT=9000;
 
@@ -569,7 +593,34 @@ const QUIPS={
     'The carriage is divided. Somebody call the Business Owners.'],
   generic:[
     'The Conductor has seen things. Mostly uncommitted objectives.',
-    'Next stop approaching. Keep your acceptance criteria inside the carriage.']
+    'Next stop approaching. Keep your acceptance criteria inside the carriage.'],
+  photo:[
+    'Photo finish up top: {a} and {b} split by just {d} points.',
+    'The gap at the front is {d} points. Mind it, {b}.'],
+  comeback:[
+    '{n} storms into the medals, up {k} places. Now THAT is a planning adjustment.',
+    'Comeback of the day: {n} climbing {k} spots toward the podium.'],
+  lastGasp:[
+    '{n} punched the ticket with {t}s left on the clock. Release on the very last demand.',
+    'Doors closing... and {n} slides in with {t}s to spare.'],
+  packed:[
+    'Everyone answered before half time. This platform is PACKED.',
+    'Full carriage, fast fingers. All tickets punched early.'],
+  lastStop:[
+    'Double points cashed! {n} banked +{p} at the final stop.',
+    'Final stop, double fare. {n} collected a mighty +{p}.']
+};
+const ST_QUIPS={
+  lesson1:['Mindset Central reminds you: machines lack ethical judgment. Some of those answers suggest humans do too.',
+    'A growth mindset means the next stop can go better.'],
+  lesson2:['WSJF Junction: shortest brains first, apparently.',
+    'The cost of delay on that round was measurable.'],
+  lesson3:['Planning Platform: that round needs a management review and problem-solving meeting.',
+    'ROAM that wrong answer: Accepted.'],
+  lesson4:['Iteration Station: fail fast, learn faster.',
+    'That answer did not meet its definition of done.'],
+  lesson5:['Inspect and Adapt Terminal: we will discuss that one in the retro.',
+    'Root cause analysis pending on that round.']
 };
 const V_RIGHT=['Ticket accepted. Story: done.','Correct! Accepted by the Product Owner.','Right on the rails.','Green signal. Carry on.'];
 const V_WRONG=['Not in the acceptance criteria.','Consider a spike next time.','Moved back to the Analyzing column.','Decommitted at the last second. Bold.','That was not in your definition of done.'];
@@ -588,10 +639,22 @@ function vib(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 const ERR=[];
 function logErr(ctx,e){
   const m=(e&&(e.message||e.code))||String(e);
-  ERR.push(new Date().toISOString().slice(11,19)+' ['+ctx+'] '+m);
+  const gx=(typeof S!=='undefined'&&S.game)?(' ('+(S.game.phase||'-')+':'+(S.game.qIndex==null?'-':S.game.qIndex)+')'):'';
+  ERR.push(new Date().toISOString().slice(11,19)+' ['+ctx+'] '+m+gx);
   if(ERR.length>60)ERR.shift();
   try{console.error('[S&S]',ctx,e);}catch(x){}
-  renderDebug();
+  updateVtag(); renderDebug();
+}
+function updateVtag(){
+  const v=document.getElementById('vtag'); if(!v)return;
+  v.textContent='SAFe&SOUND '+APP_VERSION+(ERR.length?(' · ⚠'+ERR.length):'');
+  v.classList.toggle('err',ERR.length>0);
+}
+function stWarn(e){if(S.stWarn)return; S.stWarn=true;
+  logErr('E26 storage','browser storage blocked (private mode?): '+((e&&e.message)||e));}
+function pushTrace(key){
+  S.trace.push(new Date().toISOString().slice(11,19)+'  '+key);
+  if(S.trace.length>12)S.trace.shift();
 }
 let toastT=null;
 function toast(msg){const t=$('#toast'); t.textContent=msg; t.classList.add('show');
@@ -635,7 +698,7 @@ function validatePools(){
 /* ---------------- audio (Web Audio synth, no files) ---------------- */
 let AC=null;
 function ensureAudio(){try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();}
-  if(AC.state==='suspended')AC.resume();}catch(e){}}
+  if(AC.state==='suspended')AC.resume();}catch(e){if(!S.acWarn){S.acWarn=true; logErr('E27 audio',e);}}}
 function tone(f,dur,type,vol,when,slide){try{
   if(!AC)return; if(AC.state!=='running'){try{AC.resume();}catch(x){}}
   const t0=AC.currentTime+(when||0);
@@ -678,14 +741,20 @@ const SFX={
     if(total>0&&good>=total){this.fanfare(); nz(0.25,0.07,0.25,2400);}
     else if(good>0){[392,523,659,784].forEach((f,i)=>tone(f,0.15,'triangle',0.1,i*0.06)); tone(1047,0.4,'triangle',0.1,0.26);}
     else{tone(196,0.5,'sawtooth',0.09,0,140); nz(0.3,0.06,0.05,300);}
-  }
+  },
+  klaxon(){tone(415,0.5,'sawtooth',0.11); tone(311,0.5,'sawtooth',0.11);
+    tone(415,0.4,'sawtooth',0.09,0.62); tone(311,0.4,'sawtooth',0.09,0.62);},
+  heart(){tone(55,0.1,'sine',0.13); tone(55,0.1,'sine',0.11,0.16);},
+  tock(){tone(700,0.05,'square',0.07);},
+  punch(){tone(1250,0.04,'square',0.06); nz(0.07,0.07,0.02,900); tone(523,0.09,'triangle',0.08,0.05);}
 };
 function vibOK(){vib([40,60,40]);}
 
 /* ---------------- state ---------------- */
-const S={role:null,code:null,pid:null,name:'',emoji:'🚂',game:null,off:0,everConn:false,
-  screen:'',phaseKey:'',revealed:{},botTimers:[],builtQ:-1,builtQP:-1,localAns:{},goPlayed:{},
-  earlyT:{},shown:{},qrDone:false,rows:{},lastQuip:{},raf:0,hostBotsChecked:false};
+const S={role:null,code:null,pid:null,name:'',emoji:'🚂',game:null,off:0,offKnown:false,everConn:false,
+  screen:'',phaseKey:'',revealed:{},revealRetry:{},botTimers:[],builtQ:-1,builtQP:-1,localAns:{},goPlayed:{},
+  earlyT:{},qrDone:false,lastQuip:{},raf:0,trace:[],lastSnapAt:0,lastHot:0,hbT:0,
+  stWarn:false,acWarn:false,ckWarn:false,deckChecked:false,lastRenderErr:''};
 let db=null;
 const TS=()=>firebase.database.ServerValue.TIMESTAMP;
 function now(){return Date.now()+S.off;}
@@ -700,7 +769,7 @@ function initFB(){
     if(!firebaseConfig.databaseURL){showSetup('firebaseConfig.databaseURL is missing. Open the file and fill the FIREBASE CONFIG block.'); return false;}
     firebase.initializeApp(firebaseConfig);
     db=firebase.database();
-    db.ref('.info/serverTimeOffset').on('value',s=>{S.off=s.val()||0;});
+    db.ref('.info/serverTimeOffset').on('value',s=>{S.off=s.val()||0; S.offKnown=true;});
     db.ref('.info/connected').on('value',s=>setConn(!!s.val()));
     setTimeout(()=>{if(!S.everConn){
       toast('⚠ E02 no Firebase connection after 9s. Check databaseURL and the database rules. Tap the version tag for the log.');
@@ -718,10 +787,37 @@ function go(id){
   if(id==='s-landing'){startRail(); startLanding();}
   else if(id==='s-station'){startRail();}
   else if(id==='s-join'){stopRail();}
+  clearInterval(annT);
+  if(id==='s-wait')startAnnounce();
+}
+const ANNOUNCE=[
+  'The 09:15 to Value Delivery is running on cadence.',
+  'Please keep your WIP inside the limits at all times.',
+  'Mind the gap between committed and uncommitted objectives.',
+  'Lost property: one unrefined story, last seen near the backlog.',
+  'This station operates a strict definition of done.',
+  'Passengers are reminded: the train waits for no blocked ticket.',
+  'Next departure subject to a confidence vote.',
+  'Feature trains depart every PI. Do not board moving epics.',
+  'For your safety, ROAM all personal risks before boarding.',
+  'Refreshments available in the Iteration Station buffet car.'
+];
+let annT=0, annIx=0;
+function startAnnounce(){
+  const e=$('#waitAnn'); if(!e)return;
+  annIx=Math.floor(Math.random()*ANNOUNCE.length);
+  e.textContent='📢 '+ANNOUNCE[annIx];
+  if(RM)return;
+  annT=setInterval(()=>{
+    if(S.screen!=='s-wait'){clearInterval(annT); return;}
+    annIx=(annIx+1)%ANNOUNCE.length;
+    e.style.opacity='0';
+    setTimeout(()=>{e.textContent='📢 '+ANNOUNCE[annIx]; e.style.opacity='';},350);
+  },4200);
 }
 function applyStation(l){if(document.body.dataset.st!==l){document.body.dataset.st=l;}}
 function saveSess(){try{sessionStorage.setItem('ss_sess',JSON.stringify(
-  {role:S.role,code:S.code,pid:S.pid,name:S.name,emoji:S.emoji}));}catch(e){}}
+  {role:S.role,code:S.code,pid:S.pid,name:S.name,emoji:S.emoji}));}catch(e){stWarn(e);}}
 function leave(){
   try{if(S.code)gref().off();}catch(e){}
   try{sessionStorage.removeItem('ss_sess');}catch(e){}
@@ -739,6 +835,22 @@ function deckQ(g,i){
   return {text:src.q, time:src.time, perm:entry.o,
     opts:entry.o.map(oi=>src.options[oi]),
     correctDisplay:entry.o.indexOf(src.answer)};
+}
+function checkDeck(g){
+  if(S.deckChecked||!g.deck)return;
+  S.deckChecked=true;
+  try{
+    const pool=QUESTIONS[g.lesson];
+    let bad=0;
+    g.deck.forEach((d,ix)=>{
+      const okP=Number.isInteger(d.p)&&d.p>=0&&d.p<pool.length;
+      const optN=okP?pool[d.p].options.length:0;
+      const okO=okP&&Array.isArray(d.o)&&d.o.length===optN&&
+        d.o.slice().sort((a,b)=>a-b).every((v,k)=>v===k);
+      if(!okP||!okO){bad++; logErr('E24 deck','entry '+ix+' invalid');}
+    });
+    if(bad)toast('⚠ E24 dealt deck failed its integrity check. Host should start a new game.');
+  }catch(e){logErr('E24 deck',e);}
 }
 function playersArr(g){
   const P=g.players||{}; const a=[];
@@ -802,9 +914,9 @@ async function joinGame(){
   const snap=await fb('E05 find game',db.ref(ROOT+'/'+code+'/createdAt').get());
   if(!snap.exists()){toast('No train at code '+code+'. Check the code with the host.'); return;}
   S.role='player'; S.code=code; S.name=name; S.emoji=curEmoji;
-  let pid=null; try{pid=sessionStorage.getItem('ss_pid_'+code);}catch(e){}
+  let pid=null; try{pid=sessionStorage.getItem('ss_pid_'+code);}catch(e){stWarn(e);}
   if(!pid){pid='p'+Math.random().toString(36).slice(2,10);
-    try{sessionStorage.setItem('ss_pid_'+code,pid);}catch(e){}}
+    try{sessionStorage.setItem('ss_pid_'+code,pid);}catch(e){stWarn(e);}}
   S.pid=pid;
   const me=db.ref(ROOT+'/'+code+'/players/'+pid);
   const ex=await fb('E06 join',me.get());
@@ -821,6 +933,7 @@ function attach(){
   gref().on('value',snap=>{
     const g=snap.val();
     if(!g){if(S.game){toast('The game was ended by the host.'); leave();} return;}
+    S.lastSnapAt=Date.now();
     S.game=g; render();
   },e=>{logErr('E08 stream',e); toast('⚠ E08 lost the game stream: '+(e.code||e.message));});
   if(S.role==='player'&&S.pid){
@@ -833,7 +946,7 @@ function attach(){
 async function resumeOrLand(){
   const jp=new URLSearchParams(location.search).get('join');
   if(jp){$('#inCode').value=jp.toUpperCase().slice(0,4); go('s-join'); return;}
-  let s=null; try{s=JSON.parse(sessionStorage.getItem('ss_sess'));}catch(e){}
+  let s=null; try{s=JSON.parse(sessionStorage.getItem('ss_sess'));}catch(e){stWarn(e);}
   if(s&&s.code&&s.role){
     try{
       const snap=await withTimeout(db.ref(ROOT+'/'+s.code+'/phase').get());
@@ -869,6 +982,7 @@ async function hostReveal(){
     const prev=playersArr(g); const prevRank={};
     prev.forEach((p,ix)=>prevRank[p.id]=ix);
     const res=[]; const upd={};
+    const isLast=(i>=g.deck.length-1);
     for(const pid in (g.players||{})){
       const p=g.players[pid], a=ans[pid];
       let correct=false, pts=0, elapsed=null, streak=0;
@@ -880,23 +994,39 @@ async function hostReveal(){
           const frac=clamp(elapsed/(dq.time*1000),0,1);
           const base=Math.round((1000*(1-frac*0.5))/10)*10;
           streak=(p.streak||0)+1;
-          pts=base+Math.min(streak-1,5)*100;
+          pts=(base+Math.min(streak-1,5)*100)*(isLast?2:1);
         }
       }
       const newScore=(p.score||0)+pts;
+      const ost=p.stats||{};
       upd['players/'+pid+'/score']=newScore;
       upd['players/'+pid+'/streak']=streak;
       upd['players/'+pid+'/lastPoints']=pts;
       upd['players/'+pid+'/lastCorrect']=correct;
       upd['players/'+pid+'/lastAnswered']=answered;
+      upd['players/'+pid+'/stats']={
+        c:(ost.c||0)+(correct?1:0),
+        b:Math.max(ost.b||0,streak),
+        f:correct?Math.min(ost.f||999999,elapsed):(ost.f||999999)
+      };
       res.push({id:pid,name:p.name||'Passenger',correct,answered,
-        elapsed:elapsed==null?999999:elapsed,pts,newScore,streak,prev:prevRank[pid],
+        elapsed:elapsed==null?999999:elapsed,
+        left:(correct&&elapsed!=null)?Math.max(0,dq.time*1000-elapsed):0,
+        pts,newScore,streak,prev:prevRank[pid],
         joinedAt:p.joinedAt||0});
     }
     upd.phase='reveal';
-    upd.quip=pickQuip(res);
+    upd.quip=pickQuip(res,g,dq);
     await fb('E11 reveal',gref().update(upd));
-  }catch(e){S.revealed[i]=false; logErr('E11 reveal',e);}
+  }catch(e){
+    S.revealed[i]=false;
+    logErr('E11 reveal',e);
+    if(!S.revealRetry[i]){
+      S.revealRetry[i]=true;
+      toast('⚠ E11 reveal failed. Retrying automatically...');
+      setTimeout(()=>hostReveal(),1200);
+    }
+  }
 }
 function biggestClimb(res){
   const sorted=res.slice().sort((x,y)=>y.newScore-x.newScore||x.joinedAt-y.joinedAt);
@@ -917,18 +1047,48 @@ function pick(cat){
   S.lastQuip[cat]=i; return pool[i];
 }
 function fillQ(t,v){return t.replace(/\{(\w+)\}/g,(m,k)=>(v[k]!=null?String(v[k]):m));}
-function pickQuip(res){
+function pickQuip(res,g,dq){
   const n=res.length;
   const answered=res.filter(r=>r.answered);
   const good=res.filter(r=>r.correct);
+  const isLast=!!(g&&g.deck&&g.qIndex>=g.deck.length-1);
   if(n>=2&&good.length===n)return pick('allRight');
-  if(n>=2&&answered.length>=1&&good.length===0)return pick('allWrong');
+  if(n>=2&&answered.length>=1&&good.length===0){
+    if(g&&ST_QUIPS[g.lesson]&&Math.random()<0.35){
+      const p2=ST_QUIPS[g.lesson]; return p2[Math.floor(Math.random()*p2.length)];
+    }
+    return pick('allWrong');
+  }
+  const sorted=res.slice().sort((a,b)=>b.newScore-a.newScore||a.joinedAt-b.joinedAt);
   if(good.length){
-    const g=good.slice().sort((a,b)=>a.elapsed-b.elapsed); const f=g[0];
+    if(isLast&&Math.random()<0.6){
+      const top=good.slice().sort((a,b)=>b.pts-a.pts)[0];
+      return fillQ(pick('lastStop'),{n:top.name,p:top.pts});
+    }
+    let cb=null;
+    sorted.forEach((r,ix)=>{
+      const climb=(r.prev==null?ix:r.prev)-ix;
+      if(ix<3&&climb>=2&&(!cb||climb>cb.k))cb={n:r.name,k:climb};
+    });
+    if(cb&&Math.random()<0.6)return fillQ(pick('comeback'),cb);
+    if(n>=3&&sorted.length>=2){
+      const d=(sorted[0].newScore||0)-(sorted[1].newScore||0);
+      if(d>0&&d<=100&&Math.random()<0.5)
+        return fillQ(pick('photo'),{a:sorted[0].name,b:sorted[1].name,d:d});
+    }
+    const tight=good.filter(r=>r.left<=1200).sort((a,b)=>a.left-b.left)[0];
+    if(tight&&Math.random()<0.6)
+      return fillQ(pick('lastGasp'),{n:tight.name,t:(tight.left/1000).toFixed(1)});
+    if(dq&&n>=4&&answered.length===n&&answered.every(r=>r.elapsed<=dq.time*500)&&Math.random()<0.5)
+      return pick('packed');
+    const g2=good.slice().sort((a,b)=>a.elapsed-b.elapsed); const f=g2[0];
     if(answered.length>=6&&Math.abs(good.length*2-answered.length)<=1&&Math.random()<0.5)return pick('split');
     if(f.streak>=3&&Math.random()<0.5)return fillQ(pick('streak'),{n:f.name,k:f.streak});
     const ot=biggestClimb(res);
     if(ot&&Math.random()<0.4)return fillQ(pick('overtake'),{n:ot.name,o:ot.passed,k:ot.climb});
+    if(g&&ST_QUIPS[g.lesson]&&Math.random()<0.15){
+      const p3=ST_QUIPS[g.lesson]; return p3[Math.floor(Math.random()*p3.length)];
+    }
     return fillQ(pick('fast'),{n:f.name,t:(f.elapsed/1000).toFixed(1)});
   }
   return pick('generic');
@@ -937,24 +1097,41 @@ function pickQuip(res){
 /* ---------------- render ---------------- */
 function render(){
   const g=S.game; if(!g)return;
-  if(g.lesson)applyStation(g.lesson);
-  const ph=g.phase||'lobby';
-  const key=ph+':'+(g.qIndex==null?-1:g.qIndex);
-  const entered=(key!==S.phaseKey);
-  if(S.role==='host')renderHost(g,ph,entered); else renderPlayer(g,ph,entered);
-  if(entered){S.phaseKey=key; onEnter(g,ph);}
+  try{
+    if(g.lesson)applyStation(g.lesson);
+    const ph=g.phase||'lobby';
+    const key=ph+':'+(g.qIndex==null?-1:g.qIndex);
+    const entered=(key!==S.phaseKey);
+    if(S.role==='host')renderHost(g,ph,entered); else renderPlayer(g,ph,entered);
+    if(entered){onEnter(g,ph); S.phaseKey=key; pushTrace(key);}
+  }catch(e){
+    const k=(g.phase||'?')+':'+(g.qIndex==null?'-':g.qIndex);
+    logErr('E23 render',((e&&e.message)||e)+' at '+k);
+    if(S.lastRenderErr!==k){
+      S.lastRenderErr=k;
+      toast('⚠ E23 screen update failed at '+k+'. Recovering on the next update.');
+    }
+  }
   renderDebug();
 }
 function onEnter(g,ph){
   cancelAnimationFrame(S.raf);
+  clearInterval(S.hbT);
   if(ph==='question'){
     S.goPlayed[g.qIndex]=false;
-    lastCd=99;
-    if(g.qIndex===0)SFX.whistle(); else SFX.ding();
+    lastCd=99; S.lastHot=0;
+    checkDeck(g);
+    const last=!!(g.deck&&g.qIndex>=g.deck.length-1);
+    $('#dblBan').hidden=!last;
+    if(last){
+      SFX.klaxon();
+      if(!RM)S.hbT=setInterval(()=>SFX.heart(),950);
+    }else if(g.qIndex===0)SFX.whistle(); else SFX.ding();
     if(S.role==='host')scheduleBots(g);
     qLoop();
   }else{
     $('#cdov').classList.remove('on');
+    $('#dblBan').hidden=true;
     S.botTimers.forEach(clearTimeout); S.botTimers=[];
   }
   if(ph==='reveal'){
@@ -994,7 +1171,7 @@ function renderHost(g,ph,entered){
     tr.textContent='';
     arr.forEach(p=>{const c=el('div','car'); c.appendChild(el('div','cem',p.emoji||'🚂'));
       c.appendChild(el('div','cnm',p.name||'Passenger')); tr.appendChild(c);});
-    if(arr.length>prevN&&prevN>0)SFX.ding();
+    if(arr.length>prevN&&prevN>0){if(arr.length%5===0)SFX.whistle(); else SFX.ding();}
     $('#plc').textContent=arr.length+' aboard';
     const b=$('#btnStart');
     b.disabled=arr.length===0;
@@ -1055,7 +1232,7 @@ function renderHost(g,ph,entered){
     $('#lbStop').textContent='After stop '+(g.qIndex+1)+' of '+g.deck.length;
     $('#nextRow').style.display='';
     $('#btnNext').textContent=(g.qIndex<g.deck.length-1)?'Next stop 🚉':'Celebrate 🎉';
-    renderBoard(g);
+    if(entered)renderBoard(g,true);
     $('#youline').textContent='';
     return;
   }
@@ -1099,13 +1276,14 @@ function renderPlayer(g,ph,entered){
     if(entered&&me){
       const i=g.qIndex;
       const hash=(S.pid.charCodeAt(1)||7)+i;
+      const fin=!!(g.deck&&i>=g.deck.length-1);
       if(!me.lastAnswered){
         $('#vEm').textContent='⏳'; $('#vTx').textContent='No answer'; $('#vTx').className='vtx';
         $('#vPt').textContent='+0'; $('#vSt').textContent='';
         $('#vQ').textContent=V_NONE[hash%V_NONE.length];
       }else if(me.lastCorrect){
         $('#vEm').textContent='✅'; $('#vTx').textContent='Correct!'; $('#vTx').className='vtx ok';
-        $('#vPt').textContent='+'+(me.lastPoints||0);
+        $('#vPt').textContent='+'+(me.lastPoints||0)+((fin&&me.lastPoints)?' · x2 final stop':'');
         $('#vSt').textContent=(me.streak>=2)?('🔥 Streak '+me.streak):'';
         $('#vQ').textContent=V_RIGHT[hash%V_RIGHT.length];
       }else{
@@ -1113,6 +1291,15 @@ function renderPlayer(g,ph,entered){
         $('#vPt').textContent='+0'; $('#vSt').textContent='';
         $('#vQ').textContent=V_WRONG[hash%V_WRONG.length];
       }
+      try{
+        const dq=deckQ(g,i);
+        const ansMap=(g.answers&&g.answers[i])||{};
+        const mine=ansMap[S.pid];
+        let t='Correct answer: '+dq.opts[dq.correctDisplay];
+        if(mine&&typeof mine.c==='number'&&mine.c!==dq.correctDisplay&&dq.opts[mine.c]!=null)
+          t+='\nYou picked: '+dq.opts[mine.c];
+        $('#vAns').textContent=t;
+      }catch(e){$('#vAns').textContent=''; logErr('E23 render','reveal answer detail: '+((e&&e.message)||e));}
     }
     return;
   }
@@ -1120,7 +1307,7 @@ function renderPlayer(g,ph,entered){
     go('s-board');
     $('#lbStop').textContent='After stop '+(g.qIndex+1)+' of '+g.deck.length;
     $('#nextRow').style.display='none';
-    renderBoard(g);
+    if(entered)renderBoard(g,true);
     const arr=playersArr(g); const r=arr.findIndex(p=>p.id===S.pid);
     $('#youline').textContent=(r>=0)?('You: #'+(r+1)+' · '+(arr[r].score||0)+' pts'):'';
     return;
@@ -1135,8 +1322,9 @@ async function answer(i,ix,btnEl){
   if(!g||g.phase!=='question'||g.qIndex!==i)return;
   if(now()<(g.questionStartAt||0)+COUNTDOWN_MS)return;
   if(S.localAns[i]!=null)return;
+  if(!S.offKnown&&!S.ckWarn){S.ckWarn=true; logErr('E25 clock','answer sent before server clock sync; speed scoring may be slightly off');}
   S.localAns[i]=ix;
-  btnEl.classList.add('pick'); SFX.click(); vib([15]);
+  btnEl.classList.add('pick'); SFX.punch(); vib([15]);
   setTimeout(()=>{$('#qpOpts').style.display='none'; $('#punched').style.display='block';},220);
   try{
     await fb('E12 send answer',db.ref(ROOT+'/'+S.code+'/answers/'+i+'/'+S.pid).set({c:ix,at:TS()}));
@@ -1174,6 +1362,7 @@ function qLoop(){
     if(n-goAt>500)ov.classList.remove('on');
     const rem=Math.max(0,endAt-n), prog=clamp((n-goAt)/(dq.time*1000),0,1);
     const sec=Math.ceil(rem/1000);
+    if(rem<3200&&rem>0&&sec!==S.lastHot){S.lastHot=sec; SFX.tock();}
     const railId=(S.role==='host')?'#railH':'#railP';
     const rail=$(railId);
     rail.querySelector('.tr').style.left=(prog*100)+'%';
@@ -1185,57 +1374,77 @@ function qLoop(){
 }
 
 /* ---------------- leaderboard (FLIP + count-up) ---------------- */
-function renderBoard(g){
+/* ---------------- leaderboard (clean-slate rebuild + watchdog) ---------------- */
+function renderBoard(g,animate){
   const box=$('#lb');
+  box.textContent='';
   const arr=playersArr(g);
   const uncapped=!!(g.deck&&g.qIndex>=g.deck.length-1);
-  const top=uncapped?arr:arr.slice(0,TOP_N);
-  const n=Math.max(1,top.length);
+  const shown=uncapped?arr:arr.slice(0,TOP_N);
+  const n=Math.max(1,shown.length);
   const avail=Math.max(140,($('#lbwrap').clientHeight||300)-34);
   const gap=6;
   const rowH=clamp(Math.floor(avail/n)-gap,uncapped?22:32,62);
   box.style.height=(n*(rowH+gap))+'px';
-  const inTop={};
-  top.forEach((p,ix)=>{
-    inTop[p.id]=true;
-    let row=S.rows[p.id];
-    const fresh=!row;
-    if(fresh){
-      row=el('div','lbrow');
-      row.appendChild(el('span','rk')); row.appendChild(el('span','em'));
-      row.appendChild(el('span','nm')); row.appendChild(el('span','fl'));
-      row.appendChild(el('span','sc'));
-      S.rows[p.id]=row; box.appendChild(row);
-      row.style.transition='none';
-      row.style.transform='translateY('+(ix*(rowH+gap))+'px) translateX(-24px)';
-      row.style.opacity='0';
-    }
+  const prevScore=p=>(p.score||0)-(p.lastPoints||0);
+  const prevArr=arr.slice().sort((a,b)=>prevScore(b)-prevScore(a)||(a.joinedAt||0)-(b.joinedAt||0)||(a.id<b.id?-1:1));
+  const prevRank={}; prevArr.forEach((p,ix)=>prevRank[p.id]=ix);
+  const doAnim=!!animate&&!RM;
+  const rows=[];
+  let anyClimb=false;
+  shown.forEach((p,ix)=>{
+    const row=el('div','lbrow'+(ix<3?(' p'+(ix+1)):'')+((p.id===S.pid)?' me':''));
+    row.appendChild(el('span','rk','#'+(ix+1)));
+    row.appendChild(el('span','em',p.emoji||'🚂'));
+    row.appendChild(el('span','nm',p.name||'Passenger'));
+    row.appendChild(el('span','fl',(p.streak>=2)?('🔥'+p.streak):''));
+    const sc=el('span','sc',String(doAnim?prevScore(p):(p.score||0)));
+    row.appendChild(sc);
     row.style.height=rowH+'px';
     row.style.fontSize=clamp(rowH*0.38,10,20)+'px';
-    row.className='lbrow'+(ix<3?(' p'+(ix+1)):'')+((p.id===S.pid)?' me':'');
-    row.children[0].textContent='#'+(ix+1);
-    row.children[1].textContent=p.emoji||'🚂';
-    row.children[2].textContent=p.name||'Passenger';
-    row.children[3].textContent=(p.streak>=2)?('🔥'+p.streak):'';
-    countUp(row.children[4],S.shown[p.id]||0,p.score||0);
-    S.shown[p.id]=p.score||0;
     const y=ix*(rowH+gap);
-    const prevY=row._y;
-    if(fresh){
-      requestAnimationFrame(()=>{row.style.transition='';
-        row.style.transform='translateY('+y+'px)'; row.style.opacity='1';});
-    }else{
-      row.style.opacity='1';
-      row.style.transform='translateY('+y+'px)';
-      if(prevY!=null&&y<prevY){row.classList.remove('climb'); void row.offsetWidth; row.classList.add('climb');}
-    }
-    row._y=y;
+    const py=(prevRank[p.id]!=null?prevRank[p.id]:ix)*(rowH+gap);
+    row.style.transition='none';
+    row.style.transform='translateY('+(doAnim?py:y)+'px)';
+    box.appendChild(row);
+    const climb=(prevRank[p.id]!=null&&prevRank[p.id]>ix);
+    if(climb)anyClimb=true;
+    rows.push({row,sc,y,from:prevScore(p),to:(p.score||0),climb});
   });
-  for(const id in S.rows){
-    const r=S.rows[id];
-    if(!inTop[id]){r.classList.add('hidden'); r.style.opacity='';}
-    else r.classList.remove('hidden');
+  if(doAnim){
+    setTimeout(()=>{
+      rows.forEach(r=>{
+        if(!r.row.isConnected)return;
+        r.row.style.transition='';
+        r.row.style.transform='translateY('+r.y+'px)';
+        if(r.climb){r.row.classList.add('climb');}
+        countUp(r.sc,r.from,r.to);
+      });
+      if(anyClimb)SFX.swish();
+    },550);
+    setTimeout(()=>boardWatchdog(rows),1900);
   }
+}
+function boardWatchdog(rows){
+  let snapped=0;
+  rows.forEach(r=>{
+    if(!r.row.isConnected)return;
+    try{
+      const m=new DOMMatrixReadOnly(getComputedStyle(r.row).transform);
+      if(Math.abs(m.m42-r.y)>3){
+        r.row.style.transition='none';
+        r.row.style.transform='translateY('+r.y+'px)';
+        snapped++;
+      }
+      r.sc.textContent=String(r.to);
+    }catch(e){
+      r.row.style.transition='none';
+      r.row.style.transform='translateY('+r.y+'px)';
+      r.sc.textContent=String(r.to);
+      snapped++;
+    }
+  });
+  if(snapped)logErr('E22 board watchdog','snapped '+snapped+' row(s) into place');
 }
 function countUp(elm,from,to){
   if(RM||from===to){elm.textContent=String(to); return;}
@@ -1350,8 +1559,28 @@ function runPlayerFinal(g){
   $('#fpEm').textContent=(r===0)?'🥇':(r===1)?'🥈':(r===2)?'🥉':(S.emoji||'🚂');
   $('#fpNm').textContent=S.name;
   $('#fpSc').textContent=(me.score||0)+' pts';
+  const st=me.stats||{};
+  const deckN=(g.deck&&g.deck.length)||PICK_N;
+  const parts=['✔ '+(st.c||0)+' / '+deckN+' correct','🔥 best streak '+(st.b||0)];
+  if(st.f&&st.f<999999)parts.push('⚡ fastest '+(st.f/1000).toFixed(1)+'s');
+  $('#fpStats').textContent=parts.join('   ·   ');
   $('#fpQ').textContent=F_PLACE[Math.min(r<0?3:r,3)];
-  if(r>=0&&r<3){SFX.fanfare(); vibOK();}else SFX.ding();
+  if(r>=0&&r<3){
+    SFX.fanfare(); vibOK();
+    if(!RM){
+      const c=$('#fpConf'); c.textContent='';
+      const em=['🎉','✨','🎊','⭐'];
+      for(let k=0;k<26;k++){
+        const sp=el('i',null,em[k%em.length]);
+        sp.style.left=(Math.random()*100)+'%';
+        sp.style.animationDuration=(2.6+Math.random()*2.2)+'s';
+        sp.style.animationDelay=(Math.random()*1.4)+'s';
+        sp.style.fontSize=(13+Math.random()*15)+'px';
+        c.appendChild(sp);
+      }
+      setTimeout(()=>{c.textContent='';},6500);
+    }
+  }else SFX.ding();
 }
 let railOn=false, railRaf=0, railFit=false;
 function stopRail(){
@@ -1444,16 +1673,20 @@ function startLanding(){
 function renderDebug(){
   const d=$('#debug'); if(!d||d.hidden)return;
   const g=S.game||{};
+  const age=S.lastSnapAt?Math.round((Date.now()-S.lastSnapAt)/1000):-1;
   $('#dbmeta').textContent=[
-    'app      '+APP_VERSION,
+    'app      SAFe&SOUND '+APP_VERSION,
+    'creator  Yusuf Barman (BarY) · github.com/y8arman',
     'role     '+(S.role||'-'),
     'code     '+(S.code||'-'),
     'pid      '+(S.pid||'-'),
     'phase    '+(g.phase||'-')+'  qIndex '+(g.qIndex==null?'-':g.qIndex),
     'players  '+Object.keys(g.players||{}).length+'  deck '+((g.deck&&g.deck.length)||0),
     'clock±   '+Math.round(S.off)+'ms   connected '+($('#conn').classList.contains('on')),
+    'stream   '+(age<0?'no data yet':(age+'s since last update'+(age>15?'  ⚠ STALE':''))),
     'firebase '+(firebaseConfig.projectId||'-')
   ].join('\n');
+  $('#dbtrace').textContent=S.trace.slice().reverse().join('\n')||'No transitions yet.';
   $('#dblog').textContent=ERR.slice().reverse().join('\n')||'No errors logged. Lovely.';
 }
 
@@ -1499,7 +1732,7 @@ function wire(){
   $('#vtag').addEventListener('click',()=>{const d=$('#debug'); d.hidden=!d.hidden; renderDebug();});
   $('#dbClose').addEventListener('click',()=>{$('#debug').hidden=true;});
   $('#dbCopy').addEventListener('click',()=>{
-    const txt=$('#dbmeta').textContent+'\n\n'+$('#dblog').textContent;
+    const txt=$('#dbmeta').textContent+'\n\nPHASE HISTORY\n'+$('#dbtrace').textContent+'\n\nERRORS\n'+$('#dblog').textContent;
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(txt).then(()=>toast('Log copied.'),()=>toast('Copy failed. Select the text manually.'));
     }else toast('Copy not supported here. Select the text manually.');
@@ -1512,7 +1745,7 @@ function wire(){
     }
   });
   addEventListener('resize',()=>{const g=S.game;
-    if(g&&(g.phase==='board'))renderBoard(g);});
+    if(g&&(g.phase==='board'))renderBoard(g,false);});
 }
 
 /* ---------------- boot ---------------- */
@@ -1520,6 +1753,7 @@ validatePools();
 buildStatic();
 buildLanding();
 wire();
+updateVtag();
 S.screen='s-landing';
 startRail();
 startLanding();
