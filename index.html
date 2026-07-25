@@ -346,6 +346,43 @@
   #vtag.err{border-color:var(--bad); color:#fecaca;}
   #waitAnn{transition:opacity .3s; min-height:2.6em; max-width:460px;}
 
+  .lenrow{display:flex; gap:10px; margin-top:14px; justify-content:center;}
+  .lenb{background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:999px;
+    padding:8px 18px; font-weight:800; cursor:pointer; font-size:.9rem; color:var(--dim);}
+  .lenb.sel{border-color:var(--a1); color:var(--ink);
+    background:color-mix(in srgb,var(--a1) 20%,transparent);
+    box-shadow:0 0 12px color-mix(in srgb,var(--a1) 35%,transparent);}
+  .stcard .tp{margin-top:8px; font-size:.72rem; color:var(--a1); opacity:.85; letter-spacing:.03em;}
+  .puff{position:absolute; width:8px; height:8px; border-radius:50%;
+    background:rgba(230,240,255,.55); pointer-events:none; animation:puffup 1.1s ease-out forwards;}
+  @keyframes puffup{to{transform:translate(-16px,-28px) scale(2.6); opacity:0;}}
+  .sash{background:var(--gold); color:#3a2a00; font-weight:900; font-size:.6rem;
+    letter-spacing:.22em; padding:2px 10px; border-radius:6px; transform:rotate(-6deg); margin:2px 0 2px;}
+  .pod.g1 .bar{animation:mvpp 1.2s ease-in-out infinite alternate;}
+  @keyframes mvpp{from{box-shadow:0 0 14px rgba(251,191,36,.45);} to{box-shadow:0 0 34px rgba(251,191,36,.95);}}
+  #report{width:100%; max-width:1100px; margin-top:10px; background:var(--panel);
+    border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:10px;
+    padding:9px 14px; font-size:.8rem; font-weight:700; color:var(--ink); text-align:center;}
+  .tickline{transition:opacity .3s; color:var(--gold); font-size:.8rem; margin-top:14px;
+    letter-spacing:.04em; min-height:2.2em; max-width:640px; text-align:center;}
+  #lobTick{margin-top:10px; font-size:.74rem;}
+  #codeov{position:fixed; inset:0; z-index:66; background:rgba(2,4,10,.97); display:flex;
+    flex-direction:column; align-items:center; justify-content:center; cursor:pointer;}
+  #codeovTxt{font-size:clamp(5rem,24vw,15rem); font-weight:900; letter-spacing:.28em;}
+  #codeovHint{color:var(--dim); margin-top:10px;}
+  #howov{position:fixed; inset:0; z-index:66; background:rgba(2,4,10,.96); overflow:auto; padding:26px;}
+  #howov .card{max-width:640px; margin:0 auto; background:var(--panel); border:1px solid var(--line);
+    border-radius:16px; padding:22px;}
+  #howov h3{margin-bottom:10px;}
+  #howov p{color:var(--dim); line-height:1.55; margin:8px 0; font-size:.95rem;}
+  #howov b{color:var(--ink);}
+  #muteBtn{background:none; border:1px solid var(--line); border-radius:8px;
+    padding:3px 9px; color:var(--dim); font-size:.85rem; cursor:pointer;}
+  .prmsg{margin-top:12px; font-weight:800; min-height:1.4em; text-align:center;}
+  .prmsg.ok{color:var(--ok);} .prmsg.bad{color:var(--bad);}
+  .opt.deadpick{border-color:var(--bad); opacity:1; box-shadow:0 0 14px rgba(251,113,133,.4);}
+  button.opt[disabled]{cursor:default;}
+
   @media (max-width:640px){
     .opts{grid-template-columns:1fr;}
     .lobbygrid{grid-template-columns:1fr;}
@@ -374,13 +411,17 @@
     <div class="btnrow">
       <button class="btn" id="btnHost">🚂 Drive the Train</button>
       <button class="btn ghost" id="btnJoinGo">🎫 Board a Game</button>
+      <button class="btn ghost" id="btnPractice">🎯 Practice solo</button>
     </div>
+    <div class="tickline mono" id="insTick"></div>
+    <button class="btn ghost" id="btnHow" style="margin-top:12px; padding:8px 18px; font-size:.85rem;">❓ How to play</button>
     <div class="credit">Built by BARY with Love for the Wavestone London POPM Training in July 2026</div>
   </div></section>
 
   <section id="s-station" class="screen"><div class="wrap">
-    <h1 class="glow" style="font-size:clamp(1.4rem,4vw,2.2rem); margin-top:8px;">Choose your line</h1>
-    <div class="sub" style="letter-spacing:.2em;">One lesson per game · 10 random stops from a pool of 30</div>
+    <h1 class="glow" id="stTitle" style="font-size:clamp(1.4rem,4vw,2.2rem); margin-top:8px;">Choose your line</h1>
+    <div class="sub" style="letter-spacing:.2em;">Random stops dealt from a pool of 30 per lesson</div>
+    <div class="lenrow" id="lenRow"></div>
     <div class="stgrid" id="stgrid"></div>
     <div class="btnrow"><button class="btn ghost" id="btnBackL">← Back</button></div>
   </div></section>
@@ -401,7 +442,8 @@
         <div class="sub" style="letter-spacing:.2em; margin-bottom:8px;">Scan to board</div>
         <div class="qrbox"><div id="qr"></div></div>
         <a class="joinurl" id="joinlink" target="_blank" rel="noopener"></a>
-        <div class="codebig glow" id="codebig" style="margin-top:8px;"></div>
+        <div class="codebig glow" id="codebig" style="margin-top:8px; cursor:pointer;" title="Tap to enlarge"></div>
+        <div class="tickline mono" id="lobTick"></div>
       </div>
       <div class="lpanel">
         <div style="display:flex; align-items:baseline; justify-content:space-between;">
@@ -450,6 +492,7 @@
     <div class="qtext" id="rvText"></div>
     <div class="opts" id="rvOpts" style="max-width:860px;"></div>
     <div class="bars" id="bars"></div>
+    <div class="stopct" id="rvFast" style="margin-top:8px;"></div>
     <div class="quip" id="quip"></div>
     <div class="btnrow" style="margin-top:auto; padding-top:10px;"><button class="btn" id="btnBoardShow">Leaderboard 🏆</button></div>
   </div></section>
@@ -474,13 +517,31 @@
     <div class="btnrow" id="nextRow" style="margin-top:12px;"><button class="btn" id="btnNext">Next stop 🚉</button></div>
   </div></section>
 
+  <section id="s-pr" class="screen"><div class="wrap">
+    <div id="prPlay" style="width:100%; display:flex; flex-direction:column; align-items:center; flex:1; min-height:0;">
+      <div class="stopct" id="prStop"></div>
+      <div class="qtext" id="prText" style="font-size:clamp(1rem,2.4vh + .6vw,1.5rem);"></div>
+      <div class="opts" id="prOpts" style="max-width:860px;"></div>
+      <div class="prmsg" id="prMsg"></div>
+      <div class="btnrow"><button class="btn" id="prNext" hidden>Next stop 🚉</button>
+        <button class="btn ghost" id="prQuit">Back to depot 🏠</button></div>
+    </div>
+    <div id="prDone" hidden style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1;">
+      <div class="placebig glow" id="prScore"></div>
+      <div class="vq" style="color:var(--gold); font-weight:700; margin-top:12px; text-align:center; max-width:460px;" id="prQuip"></div>
+      <div class="btnrow"><button class="btn" id="prAgain">Run it again 🔁</button>
+        <button class="btn ghost" id="prHome">Back to depot 🏠</button></div>
+    </div>
+  </div></section>
+
   <section id="s-fh" class="screen"><div class="wrap">
     <h1 class="glow" id="fhTitle" style="font-size:clamp(1.4rem,4vw,2.2rem); margin-top:4px;">🎉 And your winners are...</h1>
     <div id="podium">
       <div class="pod g2" id="pod2"><div class="mdl">🥈</div><div class="pem"></div><div class="pnm"></div><div class="psc"></div><span class="bar"></span></div>
-      <div class="pod g1" id="pod1"><div class="mdl">🥇</div><div class="pem"></div><div class="pnm"></div><div class="psc"></div><span class="bar"></span></div>
+      <div class="pod g1" id="pod1"><div class="mdl">🥇</div><div class="sash">MVP</div><div class="pem"></div><div class="pnm"></div><div class="psc"></div><span class="bar"></span></div>
       <div class="pod g3" id="pod3"><div class="mdl">🥉</div><div class="pem"></div><div class="pnm"></div><div class="psc"></div><span class="bar"></span></div>
     </div>
+    <div id="report" hidden></div>
     <div class="manif-title" id="mtTitle" hidden>Full passenger manifest</div>
     <div id="manifest" hidden></div>
     <div class="btnrow" style="margin-top:10px;">
@@ -503,13 +564,30 @@
 
 <div id="cdov"><div id="cdnum"></div></div>
 <div id="dblBan" class="mono" hidden>🚨 FINAL STOP · POINTS PAY DOUBLE 🚨</div>
+<div id="codeov" hidden>
+  <div class="sub" style="letter-spacing:.3em;">Join with code</div>
+  <div id="codeovTxt" class="glow mono"></div>
+  <div id="codeovHint">Tap anywhere to close</div>
+</div>
+<div id="howov" hidden>
+  <div class="card">
+    <h3>🎫 How to play</h3>
+    <p><b>Joining:</b> scan the QR on the big screen or open the site, tap Board a Game, and enter the 4-letter code. Phones, tablets, and laptops all work. You can hop on even after the train has left.</p>
+    <p><b>Answering:</b> after the 3-2-1 countdown, tap your answer. Faster is better: a correct answer scores between 500 points (at the buzzer) and 1000 points (instant).</p>
+    <p><b>Streaks:</b> every consecutive correct answer beyond the first adds a +100 bonus, up to +500. A wrong or missed answer resets it.</p>
+    <p><b>The final stop:</b> all points pay DOUBLE on the last question. Comebacks happen.</p>
+    <p><b>The finale:</b> podium, medals, fireworks, and the full passenger manifest. May the best passenger win.</p>
+    <div class="btnrow"><button class="btn" id="howClose">Got it 🚂</button></div>
+  </div>
+</div>
 <div id="fpConf"></div>
 <canvas id="confc"></canvas>
 <div id="toast" role="alert"></div>
 <div id="statusbar">
   <span class="dot" id="conn"></span><span id="connt">connecting…</span>
   <span id="sbcode" class="mono"></span>
-  <button id="vtag" class="mono">SAFe&amp;SOUND v1.5 (2026-07-25)</button>
+  <button id="muteBtn">🔊</button>
+  <button id="vtag" class="mono">SAFe&amp;SOUND v1.6 (2026-07-25)</button>
 </div>
 <div id="debug" hidden>
   <h3>🔧 Debug panel</h3>
@@ -544,18 +622,18 @@ const firebaseConfig = {
 };
 /* ===================================================================== */
 
-const APP_VERSION='v1.5 (2026-07-25)';
+const APP_VERSION='v1.6 (2026-07-25)';
 const ROOT='st_games';
 const PICK_N=10, TOP_N=10, COUNTDOWN_MS=3000, CALL_TIMEOUT=9000;
 
 const QUESTIONS={"lesson1":[{"q":"In SAFe, which role owns, defines, and prioritizes the ART backlog?","options":["Release Train Engineer","System Architect","Product Management","Business Owners"],"answer":2,"time":20},{"q":"Who has content authority over the team backlog?","options":["Product Management","Product Owner","Scrum Master/Team Coach","The Release Train Engineer"],"answer":1,"time":20},{"q":"An Agile Release Train is a virtual organization of typically...","options":["3 to 5 teams (20 to 30 people)","A single team of 10 or fewer","12 to 20 teams (150 to 250 people)","5 to 12 teams (50 to 125+ people)"],"answer":3,"time":20},{"q":"Which best describes an Agile Team in SAFe?","options":["A cross-functional, self-organizing team of 10 or fewer that defines, builds, tests, and delivers","A group of developers who hand testing off to a separate QA department","A management committee that prioritizes the portfolio","A temporary project group disbanded after each release"],"answer":0,"time":20},{"q":"Which sequence of activities describes a development value stream?","options":["The activities needed to deliver a product or service to a customer","The activities needed to convert a business hypothesis into a technology-enabled solution","Admitting and treating a patient","Fulfilling an e-commerce order"],"answer":1,"time":25},{"q":"Complete the Agile Manifesto value: 'Customer collaboration over...'","options":["contract negotiation","comprehensive documentation","following a plan","processes and tools"],"answer":0,"time":20},{"q":"Which statement correctly describes the relationship between AI, ML, DL, and GenAI?","options":["ML is a subset of GenAI, which is a subset of AI","DL and ML are separate fields outside of AI","GenAI is a subset of DL, which is a subset of ML, which is a subset of AI","AI is a specialized type of Deep Learning"],"answer":2,"time":25},{"q":"What is the main benefit of Retrieval Augmented Generation (RAG)?","options":["It removes the need for prompting","It grounds responses in information the user provides, reducing hallucination risk","It permanently retrains the model on new data","It makes the model respond faster"],"answer":1,"time":20},{"q":"What distinguishes an AI agent from a basic LLM interaction?","options":["Agents are always more accurate","Agents cannot hallucinate","Agents never require human oversight","Given a goal, an agent can plan, use tools, and take actions on its own"],"answer":3,"time":20},{"q":"Which five elements should be included in every effective AI prompt?","options":["Plan, Do, Check, Adjust, Repeat","Goal, Role, Task, Context, Details","Who, What, When, Where, Why","Card, Conversation, Confirmation, Criteria, Commitment"],"answer":1,"time":20},{"q":"Which role serves as the coach for the Agile Release Train?","options":["Product Management","Release Train Engineer","System Architect","Business Owner"],"answer":1,"time":20},{"q":"What does the System Architect provide to the teams on the train?","options":["Feature priorities","Business value scores","Architectural guidance and technical enablement","Funding approvals"],"answer":2,"time":20},{"q":"Who are the key stakeholders on the Agile Release Train?","options":["Business Owners","Shared services","The system team","Suppliers"],"answer":0,"time":20},{"q":"What are shared services in SAFe?","options":["Cloud infrastructure shared by all teams","Specialty roles, people, and services required for ART success but not dedicated full-time","The ART's HR department","A pool of spare developers"],"answer":1,"time":20},{"q":"What does the system team provide?","options":["Feature acceptance","The ART budget","Marketing support","Processes and tools to integrate and evaluate assets early and often"],"answer":3,"time":20},{"q":"Which statement about a value stream is true?","options":["It ends after each release","It persists for as long as customers continue to derive value","It contains only the software systems","It is re-formed at every PI boundary"],"answer":1,"time":25},{"q":"Which area of responsibility belongs to Product Management but NOT the Product Owner?","options":["Connecting with the customer","Getting and applying feedback","Exploring markets and users","Contributing to the vision and roadmap"],"answer":2,"time":25},{"q":"Which area of responsibility belongs to the Product Owner but NOT Product Management?","options":["Supporting the team in delivering value","Defining product strategy, vision, and roadmaps","Exploring markets and users","Managing and prioritizing the ART backlog"],"answer":0,"time":25},{"q":"Who has the authority to accept stories and team increments?","options":["Product Management","The Scrum Master/Team Coach","Business Owners","The Product Owner"],"answer":3,"time":20},{"q":"Who establishes features and their acceptance criteria?","options":["Product Management","The Product Owner","The Agile Team","The Release Train Engineer"],"answer":0,"time":20},{"q":"What are the two specialty roles on an Agile Team?","options":["Product Manager and System Architect","Product Owner and Scrum Master/Team Coach","Business Owner and RTE","Developer and Tester"],"answer":1,"time":20},{"q":"Which of these is a Scrum Master/Team Coach responsibility?","options":["Prioritizing the team backlog","Accepting stories","Improving flow","Defining features"],"answer":2,"time":20},{"q":"According to the Agile Manifesto, what is the highest priority?","options":["Following the plan precisely","Satisfying the customer through early and continuous delivery of valuable software","Producing comprehensive documentation","Maximizing team utilization"],"answer":1,"time":25},{"q":"According to the Agile Manifesto, what is the primary measure of progress?","options":["Story points completed","Hours logged","Working software","Documents produced"],"answer":2,"time":20},{"q":"How does the Agile Manifesto define simplicity?","options":["Using the fewest tools possible","The art of maximizing the amount of work not done","Writing shorter user stories","Having fewer meetings"],"answer":1,"time":20},{"q":"What is the first principle of Lean thinking?","options":["Precisely specify value by product","Pursue perfection","Make value flow without interruptions","Let the customer pull value"],"answer":0,"time":25},{"q":"According to the course, what do machines lack compared to humans?","options":["Speed and scale","Pattern recognition","Consciousness, intent, and ethical judgment","The ability to process large datasets"],"answer":2,"time":20},{"q":"Which task suits a Large Language Model best?","options":["Guaranteeing factually perfect legal citations","Summarizing or rewriting content","Making final product decisions","Replacing customer interviews"],"answer":1,"time":20},{"q":"According to the Agile Manifesto, the best architectures, requirements, and designs emerge from...","options":["the System Architect alone","management steering committees","self-organizing teams","detailed upfront planning"],"answer":2,"time":20},{"q":"Which advanced prompting technique asks the AI to show its step-by-step reasoning?","options":["Interview","Challenge","Decomposition","Chain-of-thought"],"answer":3,"time":20}],"lesson2":[{"q":"What is a Planning Interval (PI)?","options":["A one-week timebox for team-level planning","An annual budgeting cycle","A timebox, typically 8 to 12 weeks, during which an ART delivers incremental value","The time between two Iteration Reviews"],"answer":2,"time":20},{"q":"How long does PI Planning typically last when held in person?","options":["Half a day","Two days","One day","One full week"],"answer":1,"time":20},{"q":"Every feature includes which three elements?","options":["A name, a benefit hypothesis, and acceptance criteria","A user role, an activity, and a business value","A goal, a role, and a task","An epic, a story, and an enabler"],"answer":0,"time":20},{"q":"How should a feature be sized?","options":["To fit within a single iteration","To span multiple PIs for efficiency","Size does not matter for features","So that one ART can deliver it within one PI"],"answer":3,"time":20},{"q":"How is WSJF (Weighted Shortest Job First) calculated?","options":["Job size divided by cost of delay","Cost of delay divided by job size","Business value multiplied by time criticality","Cost of delay minus job duration"],"answer":1,"time":20},{"q":"Which three components make up the cost of delay?","options":["Budget, scope, and schedule","Volume, complexity, and uncertainty","User-business value, time criticality, and risk reduction/opportunity enablement","Effort, duration, and dependencies"],"answer":2,"time":25},{"q":"Which best describes a market rhythm?","options":["An ad-hoc, unpredictable event such as a surprise regulation change","A cyclical, predictable pattern in when value is highest for customers","A competitor's unexpected product launch","A one-time technology disruption"],"answer":1,"time":20},{"q":"What is the relationship between enablers, features, and the architectural runway?","options":["Enablers consume the runway; features extend it","Both consume the runway equally","The runway is unrelated to enablers","Enablers extend the runway; features consume it"],"answer":3,"time":20},{"q":"Which roadmap provides a multiyear view of milestones, epics, and capabilities?","options":["The PI roadmap","The ART planning board","The solution roadmap","The team backlog"],"answer":2,"time":20},{"q":"What is the purpose of capacity allocation in the ART backlog?","options":["To assign individuals to specific teams","To dedicate a percentage of the PI's capacity to enablers, tech debt, and maintenance versus new features","To calculate team velocity","To limit how many teams join the train"],"answer":1,"time":25},{"q":"PI Planning is often called the...","options":["heartbeat of the ART","end of the value stream","portfolio review","team retrospective"],"answer":0,"time":20},{"q":"During PI Planning, who owns feature priorities and who owns story planning?","options":["PM owns story planning; teams own feature priorities","Product Management owns feature priorities; Agile Teams own story planning and high-level estimates","The RTE owns both","Business Owners own both"],"answer":1,"time":25},{"q":"How long does virtual PI Planning typically last?","options":["Two days","Half a day","Three to four days","Two weeks"],"answer":2,"time":20},{"q":"What should Product Management do with the top 10 features BEFORE PI Planning?","options":["Keep them confidential to avoid biasing the teams","Socialize them to set expectations","Convert them all into stories","Assign them to specific teams"],"answer":1,"time":20},{"q":"What is an epic in SAFe?","options":["A very large user story","A container for a significant solution development initiative","Any feature that spans two iterations","A synonym for a milestone"],"answer":1,"time":20},{"q":"What is a story in SAFe?","options":["A short description of a small piece of desired functionality, usually from the user's perspective","A service that fulfills a stakeholder need","A significant portfolio investment","A test case"],"answer":0,"time":20},{"q":"What do enablers support?","options":["Marketing campaigns","The activities needed to extend the architectural runway","Customer invoicing","Performance reviews"],"answer":1,"time":20},{"q":"Besides the description, what does an epic hypothesis statement include?","options":["A complete Gantt chart","Business outcomes, leading indicators, and nonfunctional requirements","The full list of stories","Team assignments"],"answer":1,"time":25},{"q":"What is a solution vision?","options":["A fixed contract with the customer","The ART's budget","A description of the future state of the product or solution","An iteration goal"],"answer":2,"time":20},{"q":"Which of these is NOT a common vision format named in the course?","options":["Rolling wave briefings","A draft press release","A preliminary data sheet","A detailed Gantt chart"],"answer":3,"time":25},{"q":"Who creates the vision for the ART?","options":["Product Management","The Scrum Master/Team Coach","The system team","Each Agile Team separately"],"answer":0,"time":20},{"q":"Which is an example of a market EVENT (rather than a rhythm)?","options":["The pre-holiday retail season each year","Quarterly toy-buying cycles","A known change to regulations","The annual back-to-school peak"],"answer":2,"time":25},{"q":"What are personas?","options":["Legal user contracts","Characterizations of the people who might use your product","Anonymous analytics profiles","The names of the Agile Teams"],"answer":1,"time":20},{"q":"What is a customer journey map used for?","options":["Designing the end-to-end customer experience","Estimating story points","Planning team capacity","Tracking defects"],"answer":0,"time":20},{"q":"What does the 'Garbage In, Garbage Out' principle warn about?","options":["AI can take bad data and produce bad output that LOOKS good","AI deletes bad data automatically","Only small datasets cause problems","Output quality is independent of input data"],"answer":0,"time":25},{"q":"What must always happen with AI deep-research outputs?","options":["They can be published directly","They must be reviewed, validated, and acted on by people","They replace customer discovery","They are stored but never used"],"answer":1,"time":20},{"q":"In the whole product model, what is the MVP?","options":["The most valuable persona","The final polished release","An early and minimal version of a new product","The marketing plan"],"answer":2,"time":20},{"q":"In the ART Kanban, what characterizes the Funnel state?","options":["All new ideas are welcome","WSJF is finalized","Features are deployed to staging","Stories are accepted"],"answer":0,"time":20},{"q":"What do WIP limits on a Kanban board promote?","options":["Bigger batches","More parallel work","Flow and the continuous delivery of value","Longer lead times"],"answer":2,"time":20},{"q":"Reinertsen says: 'If you only quantify one thing, quantify the...'","options":["team velocity","cost of delay","number of defects","story points"],"answer":1,"time":20}],"lesson3":[{"q":"During PI Planning day one, who presents the product/solution vision to the ART?","options":["The Release Train Engineer","The System Architect","Business Owners","Product Management"],"answer":3,"time":20},{"q":"What happens during team breakouts at PI Planning?","options":["Managers assign stories to individuals","Teams plan capacity, decompose features into stories, and draft their PI objectives","Product Management writes all acceptance criteria alone","The RTE estimates the work for every team"],"answer":1,"time":25},{"q":"What are PI objectives?","options":["The complete list of stories for the PI","The features of the ART backlog in rank order","Business summaries of the business and technical goals a team intends to deliver in the PI","The ART's budget targets"],"answer":2,"time":25},{"q":"Which statement about uncommitted objectives is true?","options":["They are extra work teams do only if there is spare time","They are excluded from the load calculation","They are always delivered first","They are planned and count in the load, but are not part of the commitment"],"answer":3,"time":25},{"q":"Who assigns business value to team PI objectives?","options":["The team, privately","Business Owners, in conversation with the team","The Product Owner alone","The Scrum Master/Team Coach"],"answer":1,"time":20},{"q":"In SMART PI objectives, what does the 'T' stand for?","options":["Testable","Technical","Time-bound","Transparent"],"answer":2,"time":20},{"q":"When ROAMing risks, what does the 'O' stand for?","options":["Owned","Open","Optional","Overruled"],"answer":0,"time":20},{"q":"The confidence-vote commitment has two parts: teams agree to do everything in their power to meet the objectives, and...","options":["to work weekends if required","to never change the plan under any circumstances","to escalate immediately if facts indicate an objective is not achievable, so corrective action can be taken","to also deliver all uncommitted objectives"],"answer":2,"time":25},{"q":"One team is a bottleneck for several features. Which strategy addresses this dependency challenge?","options":["Cancel the affected features","Distribute some of the work to other teams","Extend the PI by two weeks","Skip the confidence vote"],"answer":1,"time":20},{"q":"What is the purpose of the management review and problem-solving meeting at the end of day one?","options":["To celebrate the draft plans","To assign individual performance ratings","To finalize the confidence vote","To negotiate scope changes and resolve issues through planning adjustments"],"answer":3,"time":25},{"q":"What is true about the 'top 10' features at PI Planning?","options":["Exactly 10 must always be planned","It is a guideline; the ART may pull more or fewer","Teams may not see them before planning","The teams choose them during breakouts"],"answer":1,"time":20},{"q":"Being prepared to explain WHY the top features were chosen supports which SAFe Core Value?","options":["Transparency","Alignment","Respect for people","Relentless improvement"],"answer":0,"time":25},{"q":"Who facilitates the management review and problem-solving meeting?","options":["Product Management","The Business Owners","The Release Train Engineer","The Product Owner"],"answer":2,"time":20},{"q":"When are the planning adjustments from the management review presented?","options":["At the start of day two","Right after the confidence vote","During the next PI","At the Iteration Review"],"answer":0,"time":20},{"q":"Besides an intended feature, which of these can be a team PI objective?","options":["An individual's holiday plan","A milestone such as a trade show","The ART budget","A velocity target"],"answer":1,"time":25},{"q":"Why commit to PI objectives rather than to specific features or stories?","options":["It hides the plan from stakeholders","Objectives never change","It gives predictability without specificity: teams can adjust planned work based on discovery and still achieve the business value","It removes the need for planning"],"answer":2,"time":30},{"q":"Who commits to the PI objectives?","options":["Business leaders","The teams","The RTE","The customers"],"answer":1,"time":20},{"q":"Why should jargon be removed from PI objectives?","options":["To make them shorter","So Business Owners and customers can understand them","To pass compliance audits","Jargon is fine in objectives"],"answer":1,"time":20},{"q":"A PI objective has many unknowns. What does the course recommend?","options":["Commit to it anyway","Delete it","Move it to uncommitted and put in early spikes","Assign it to the strongest team"],"answer":2,"time":25},{"q":"In SMART objectives, what does 'Achievable' mean?","options":["Popular with stakeholders","Cheap to implement","Approved by the RTE","Within the team's control"],"answer":3,"time":20},{"q":"Which business value consideration covers legal or infrastructure functionality that could result in fines if not deployed?","options":["Regulatory value","Market value","Efficiency value","Future value"],"answer":0,"time":25},{"q":"Reducing operating costs, including technical debt, falls under which business value consideration?","options":["Commercial value","Efficiency value","Regulatory value","Market value"],"answer":1,"time":25},{"q":"Enablers, proofs of concept, and research spikes deliver which kind of business value?","options":["Commercial value","Regulatory value","Future value","Market value"],"answer":2,"time":25},{"q":"On the ART planning board, what do the red strings (or lines) represent?","options":["Completed features","Dependencies connecting a feature or milestone to the work it relies on","Budget approvals","Team holidays"],"answer":1,"time":20},{"q":"A feature card with no strings attached to it means...","options":["it has no dependencies","it is cancelled","it has no business value","it belongs to no team"],"answer":0,"time":20},{"q":"Two teams have a dependency within the SAME iteration. Which strategy does the course suggest?","options":["Ignore it and hope","Adjust work sequencing to eliminate same-iteration dependencies","Cancel one team's work","Merge the two teams"],"answer":1,"time":25},{"q":"Team loads are unbalanced across the ART. What is the recommended strategy?","options":["Extend the PI","Adjust work between teams based on forecasted capacity","Hire more people immediately","Drop the confidence vote"],"answer":1,"time":20},{"q":"What are the three types of risks discussed for ART execution?","options":["Financial, legal, and technical risks","Team risks, ART PI risks, and other risks","High, medium, and low risks","Internal, external, and unknown risks"],"answer":1,"time":20},{"q":"In ROAM, what does 'Accepted' mean?","options":["The risk has been fully resolved","Someone has taken responsibility for it","Nothing more can be done; if the risk occurs, the release may be compromised","The team has a plan to adjust as necessary"],"answer":2,"time":25},{"q":"Who is asked whether they accept the final plans?","options":["The Business Owners","The suppliers","The System Architect","The customers"],"answer":0,"time":20}],"lesson4":[{"q":"What is the standard user story voice format?","options":["Given (context), When (action), Then (outcome)","As a (user role), I want (activity), so that (business value)","Who, does what, by when","Feature, benefit, criteria"],"answer":1,"time":20},{"q":"What are the Three Cs of writing good stories?","options":["Clarity, Consistency, Completeness","Customer, Cost, Commitment","Card, Conversation, Confirmation","Code, Compile, Confirm"],"answer":2,"time":20},{"q":"In INVEST, what does the 'N' stand for?","options":["Negotiable","New","Necessary","Numbered"],"answer":0,"time":20},{"q":"When is a story considered done?","options":["When the developer declares it finished","When it is deployed to production","When the iteration ends","When it satisfies its acceptance criteria and is accepted by the Product Owner"],"answer":3,"time":20},{"q":"A story point represents which four factors?","options":["Hours, days, weeks, and months","Volume, complexity, knowledge, and uncertainty","Priority, value, risk, and size","Speed, quality, cost, and scope"],"answer":1,"time":25},{"q":"During estimating poker, what is the Product Owner's role?","options":["The PO provides the final estimate","The PO doubles the team's estimates for safety","The PO supports the estimation discussions but does not estimate","The PO does not attend"],"answer":2,"time":20},{"q":"A team completed 180 story points over the last six iterations. What is its velocity?","options":["20 points per iteration","25 points per iteration","36 points per iteration","30 points per iteration"],"answer":3,"time":20},{"q":"Iteration Planning creates a reciprocal commitment: the team commits to delivering specific value, and stakeholders commit to...","options":["attending every Team Sync","leaving priorities unchanged during the iteration","adding new stories mid-iteration when needed","approving overtime"],"answer":1,"time":25},{"q":"What is Backlog Refinement?","options":["The event where the team sees stories for the first time","A management-only prioritization session","A preview and elaboration of upcoming stories before Iteration Planning","The final acceptance of completed stories"],"answer":2,"time":20},{"q":"What are the four aspects of the Continuous Delivery Pipeline?","options":["Plan, Do, Check, Adjust","Continuous Exploration, Continuous Integration, Continuous Deployment, Release on Demand","Define, Build, Validate, Release","Funnel, Analyzing, Implementing, Done"],"answer":1,"time":25},{"q":"Enabler stories support which kinds of work?","options":["Exploration, architecture, infrastructure, and compliance","Marketing, sales, support, and billing","Only bug fixes","Only documentation"],"answer":0,"time":25},{"q":"Who creates the team backlog, and who prioritizes it?","options":["Created by PM; prioritized by the RTE","Created by the PO and the team; prioritized by the PO","Created by the team; prioritized by the SM/TC","Created and prioritized by Business Owners"],"answer":1,"time":25},{"q":"In flow metrics, what does 'flow time' measure?","options":["How long it takes for a work item to go through the system","The overall amount of WIP in the system","The number of items completed per timeframe","Planned versus actual business value"],"answer":0,"time":25},{"q":"A story specifies the exact search fields the developer must implement (VIN, locator, driver). According to the course, this story is...","options":["just right","insufficiently detailed","overly constrained","an enabler story"],"answer":2,"time":25},{"q":"What does a story map capture?","options":["The org chart","The user workflow and the stories that support it","The database schema","The team's vacation schedule"],"answer":1,"time":20},{"q":"Acceptance criteria provide the details of a story from which point of view?","options":["A testing point of view","A marketing point of view","A budgeting point of view","An architectural point of view"],"answer":0,"time":20},{"q":"Which syntax makes acceptance criteria directly testable?","options":["As a / I want / so that","Given-When-Then","Goal-Role-Task","Card-Conversation-Confirmation"],"answer":1,"time":20},{"q":"Who leads Iteration Planning?","options":["The Scrum Master/Team Coach","The Release Train Engineer","The Product Owner","Product Management"],"answer":2,"time":20},{"q":"What are the outputs of Iteration Planning?","options":["A new vision statement","Committed iteration goals and a committed backlog","The ART PI objectives","A yearly release plan"],"answer":1,"time":20},{"q":"In Iteration Planning, the PO defines the potential value of the iteration. What does the team define?","options":["The budget","The marketing plan","How the value will be delivered, via stories that meet the definition of done","The feature priorities"],"answer":2,"time":25},{"q":"Iteration goals serve three purposes. Which is one of them?","options":["Replacing the PI objectives","Aligning team members to a common purpose","Setting individual performance targets","Eliminating the need for a backlog"],"answer":1,"time":25},{"q":"How does a team meet its commitments?","options":["By working weekends","By doing everything they said they would do, or immediately raising the concern if it is not feasible","By quietly reducing quality","By silently dropping stories"],"answer":1,"time":25},{"q":"Which is an Iteration Planning BEST practice for the PO?","options":["Direct the team on how the work should be done","Bring unrefined stories to keep options open","Maintain neutrality so as not to influence the team to overcommit","Skip preparing preliminary iteration goals"],"answer":2,"time":25},{"q":"Which three questions does each person answer at the Team Sync?","options":["What did I do yesterday, what will I do today, and are there impediments, all relative to the iteration goals","What went well, what didn't, and what to improve","Who, what, and when","Given, when, and then"],"answer":0,"time":25},{"q":"How should a Product Owner behave at the Team Sync?","options":["Run the meeting instead of the SM/TC","Attend as a team member and listen for impediments to resolve in the meet-after","Skip it; it is not for POs","Grade each member's daily progress"],"answer":1,"time":25},{"q":"What is the outcome of the Iteration Retrospective?","options":["A new PI plan","One or two improvement items entered into the team backlog","Individual performance ratings","A revised solution vision"],"answer":1,"time":20},{"q":"What does the team demonstrate at the Iteration Review?","options":["Only completed features","Only what marketing requests","Every story, spike, refactor, and NFR","Only the riskiest story"],"answer":2,"time":20},{"q":"What is a spike?","options":["A research story; an exploration-style enabler","A critical defect","A sudden scope increase","A type of milestone"],"answer":0,"time":20},{"q":"'Now that I see the story, I only really need part of it.' What should happen to this story?","options":["Abandon it entirely","Split it","Continue it unchanged","Escalate it to the RTE"],"answer":1,"time":20},{"q":"A team frequently ends iterations with incomplete stories. What does the course suggest?","options":["Longer iterations","Imposing stricter WIP limits on the team Kanban","Skipping the retrospective","Adding more stories to build pressure"],"answer":1,"time":25}],"lesson5":[{"q":"What does the PO Sync provide?","options":["A daily status meeting for one team","A code review session","The final PI commitment","Visibility into ART progress toward the PI objectives and a chance to assess scope adjustments"],"answer":3,"time":25},{"q":"How often does the System Demo occur, and what does it show?","options":["Every two weeks, showing the integrated full system increment","At the end of each iteration, showing one team's work in isolation","Once per PI, only at Inspect & Adapt","Daily, showing work in progress"],"answer":0,"time":25},{"q":"According to responsible AI practice, how should you treat data entered into a PUBLIC AI tool?","options":["Assume it is encrypted and private","Assume it is public: never input confidential company data or client PII","It is safe as long as you delete the chat afterward","Only financial data is at risk"],"answer":1,"time":20},{"q":"The Innovation and Planning (IP) iteration provides which of the following?","options":["Extra time each iteration to finish committed features","A mandatory vacation week","Time for innovation, PI Planning, and an estimating guard band","Time for individual performance reviews"],"answer":2,"time":25},{"q":"What are the three parts of the Inspect & Adapt event?","options":["Demo, retro, and celebration","Planning, executing, and reviewing","Confidence vote, ROAM, and rework","The PI System Demo, quantitative and qualitative measurement, and the problem-solving workshop"],"answer":3,"time":25},{"q":"When calculating a team's PI achievement percentage, how are uncommitted objectives handled?","options":["Excluded from both the planned and actual totals","Included in the planned total only","Excluded from the planned total but included in the actual total, so achievement can exceed 100%","They count double toward the plan"],"answer":2,"time":30},{"q":"Which techniques does the problem-solving workshop use to identify the biggest root cause?","options":["Estimating poker and WSJF","Root cause analysis with the five whys and Pareto analysis","A confidence vote","Story mapping"],"answer":1,"time":25},{"q":"Which three are common AI risks highlighted in the course?","options":["Slow responses, high cost, and downtime","Overfitting, underfitting, and drift","Bias, hallucination, and data leaks","Spam, phishing, and malware"],"answer":2,"time":20},{"q":"What are the three aspects of responsible AI?","options":["Trustworthy, explainable, and human-centric","Fast, cheap, and good","Private, public, and hybrid","Input, process, and output"],"answer":0,"time":25},{"q":"Which of these is one of the four shifts required for AI-Empowered Agility?","options":["Replacing Product Owners with AI agents","Centralizing all decisions with senior leadership","Eliminating iterations entirely","Cross-functional, AI-augmented teams"],"answer":3,"time":30},{"q":"Who facilitates the Coach Sync?","options":["Product Management","The Release Train Engineer","A rotating team member","The Business Owners"],"answer":1,"time":20},{"q":"What is the ART Sync?","options":["A daily standup for one team","A combination of the Coach Sync and the PO Sync","The confidence vote","Another name for the System Demo"],"answer":1,"time":20},{"q":"What should Product Owners do after the PO Sync?","options":["Keep the outcomes confidential","Communicate adjustments to their teams","Rewrite the vision","Cancel the next iteration"],"answer":1,"time":20},{"q":"By how much may the System Demo lag the Iteration Review, at most?","options":["It can never lag","One iteration","One full PI","Two weeks after the PI ends"],"answer":1,"time":20},{"q":"From which environment should the System Demo run?","options":["A developer's laptop","A staging environment that resembles production as much as possible","Production only","A slide deck"],"answer":1,"time":20},{"q":"In the scalable definition of done, who accepts the SYSTEM increment?","options":["The Product Owner","Product Management","Solution Management","The Release Train Engineer"],"answer":1,"time":25},{"q":"Which is a System Demo ANTI-pattern?","options":["Different team members get the opportunity to demo","POs and Product Management see things for the first time at the demo","The right participants are present","The team celebrates its accomplishments"],"answer":1,"time":25},{"q":"Reinertsen's advice quoted for the IP iteration: provide sufficient ______ to enable cadence.","options":["documentation","budget","capacity margin","overtime"],"answer":2,"time":20},{"q":"What are the two key hackathon guidelines?","options":["Work only on committed features, and skip the demos","Work on whatever you want with whomever you want as long as it reflects the company mission, and demo the work at the end","Managers assign the topics, and results stay private","Work solo, and submit written reports"],"answer":1,"time":30},{"q":"What is the purpose of a spike?","options":["To gain knowledge that reduces the risk of a technical approach, clarifies a requirement, or improves estimate reliability","To increase velocity artificially","To penalize incomplete stories","To replace the retrospective"],"answer":0,"time":25},{"q":"Who typically leads the PI System Demo at Inspect & Adapt?","options":["Only the RTE","Product Management, POs, and the system team","The suppliers","Human Resources"],"answer":1,"time":20},{"q":"Who rates each team's PI performance against the planned business value?","options":["The team alone, privately","Business Owners and the teams, discussing together","An external auditor","The RTE alone"],"answer":1,"time":20},{"q":"What does AARRR ('pirate metrics') stand for?","options":["Acquisition, Activation, Revenue, Retention, Referrals","Analysis, Architecture, Runway, Release, Retro","Agility, Alignment, Respect, Relentlessness, Results","Ask, Answer, Review, Repeat, Release"],"answer":0,"time":25},{"q":"Which categories appear on the fishbone diagram in the problem-solving workshop?","options":["People, process, tools, and work environment","Cost, time, scope, and quality","Red, orange, blue, and pink","Plan, do, check, and adjust"],"answer":0,"time":25},{"q":"What is the final output of the problem-solving workshop?","options":["A new org chart","Improvement backlog items","A press release","Individual bonuses"],"answer":1,"time":20},{"q":"What is an AI hallucination?","options":["A security breach","Output that seems wrong or makes no sense, caused by flaws in the data or the model","A slow response","A duplicate answer"],"answer":1,"time":20},{"q":"'Be the skeptic' means treating AI-generated content as...","options":["a final product","a first draft that must be fact-checked, with you responsible for the final output","legally binding","always wrong"],"answer":1,"time":25},{"q":"Which attributes define EXPLAINABLE AI?","options":["Privacy, security, and resilience","Transparency, interpretability, and accountability","Safety, fairness, and ethics","Speed, scale, and cost"],"answer":1,"time":25},{"q":"Inclusiveness, sustainability, and compliance are attributes of which responsible AI aspect?","options":["Trustworthy AI","Explainable AI","Human-centric AI","Predictive AI"],"answer":2,"time":25},{"q":"As AI takes over more execution work, what becomes the most important human contribution?","options":["Typing speed","Clearly defining the outcome and intent","Writing more code manually","Attending more meetings"],"answer":1,"time":25}]};
 
 const LESSONS={
-  lesson1:{ln:'L1',name:'Mindset Central',tag:'Calling at: roles, responsibilities, and four kinds of AI.'},
-  lesson2:{ln:'L2',name:'WSJF Junction',tag:'Where the shortest jobs go first and the big ones sulk.'},
-  lesson3:{ln:'L3',name:'Planning Platform',tag:'Two days. One train. Zero surprises, in theory.'},
-  lesson4:{ln:'L4',name:'Iteration Station',tag:'This service calls at Card, Conversation and Confirmation.'},
-  lesson5:{ln:'L5',name:'Inspect & Adapt Terminal',tag:'End of the line. Time to find the root cause.'}
+  lesson1:{ln:'L1',name:'Mindset Central',tag:'Calling at: roles, responsibilities, and four kinds of AI.',top:'Roles · Manifesto · AI basics'},
+  lesson2:{ln:'L2',name:'WSJF Junction',tag:'Where the shortest jobs go first and the big ones sulk.',top:'Features · WSJF · Vision & roadmaps'},
+  lesson3:{ln:'L3',name:'Planning Platform',tag:'Two days. One train. Zero surprises, in theory.',top:'PI objectives · Risks · Dependencies'},
+  lesson4:{ln:'L4',name:'Iteration Station',tag:'This service calls at Card, Conversation and Confirmation.',top:'Stories · Estimating · Iteration events'},
+  lesson5:{ln:'L5',name:'Inspect & Adapt Terminal',tag:'End of the line. Time to find the root cause.',top:'System Demo · I&A · Responsible AI'}
 };
 const EMOJIS=['🚂','🎫','🦉','🧭','🚦','⏱️','📈','⚡','🧠','🤖','🔮','🃏','🔥','🧊','🦄','🐙','🎩','🛎️','🦆','☕','🍕','🐝','🚀','🚐'];
 const BOTN=['WSJF Wizard','Kanban Ken','PI Petra','Sprint Sandra','Epic Erik','Story Stan','Velocity Val','Backlog Bella','Roadmap Rita','Enabler Ed','Spike Sam','Retro Rosa','Demo Dana','Flow Finn','Sync Sofia'];
@@ -696,9 +774,20 @@ function validatePools(){
 }
 
 /* ---------------- audio (Web Audio synth, no files) ---------------- */
-let AC=null;
-function ensureAudio(){try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();}
-  if(AC.state==='suspended')AC.resume();}catch(e){if(!S.acWarn){S.acWarn=true; logErr('E27 audio',e);}}}
+let AC=null, MASTER=null, MUTED=false;
+function setMute(m){
+  MUTED=!!m;
+  try{if(MASTER)MASTER.gain.value=MUTED?0:1;}catch(e){}
+  const b=document.getElementById('muteBtn'); if(b)b.textContent=MUTED?'🔇':'🔊';
+  try{sessionStorage.setItem('ss_mute',MUTED?'1':'0');}catch(e){}
+}
+function ensureAudio(){try{
+  if(!AC){
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    MASTER=AC.createGain(); MASTER.gain.value=MUTED?0:1; MASTER.connect(AC.destination);
+  }
+  if(AC.state==='suspended')AC.resume();
+}catch(e){if(!S.acWarn){S.acWarn=true; logErr('E27 audio',e);}}}
 function tone(f,dur,type,vol,when,slide){try{
   if(!AC)return; if(AC.state!=='running'){try{AC.resume();}catch(x){}}
   const t0=AC.currentTime+(when||0);
@@ -708,7 +797,7 @@ function tone(f,dur,type,vol,when,slide){try{
   g.gain.setValueAtTime(0.0001,t0);
   g.gain.exponentialRampToValueAtTime(vol||0.12,t0+0.015);
   g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-  o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0+dur+0.05);
+  o.connect(g); g.connect(MASTER||AC.destination); o.start(t0); o.stop(t0+dur+0.05);
 }catch(e){}}
 function nz(dur,vol,when,fc){try{
   if(!AC)return; if(AC.state!=='running'){try{AC.resume();}catch(x){}}
@@ -720,7 +809,7 @@ function nz(dur,vol,when,fc){try{
   const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=fc||1200;
   const g=AC.createGain(); g.gain.setValueAtTime(vol||0.1,t0);
   g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-  s.connect(f); f.connect(g); g.connect(AC.destination); s.start(t0); s.stop(t0+dur);
+  s.connect(f); f.connect(g); g.connect(MASTER||AC.destination); s.start(t0); s.stop(t0+dur);
 }catch(e){}}
 const SFX={
   tick(){tone(880,0.07,'square',0.08);},
@@ -748,12 +837,44 @@ const SFX={
   tock(){tone(700,0.05,'square',0.07);},
   punch(){tone(1250,0.04,'square',0.06); nz(0.07,0.07,0.02,900); tone(523,0.09,'triangle',0.08,0.05);}
 };
+/* ambient rolling-train loop (host screens only, all through MASTER so mute rules it) */
+const AMB={on:false,src:null,gain:null,t1:0,t2:0};
+function startAmbient(){
+  try{
+    ensureAudio(); if(!AC||AMB.on)return; AMB.on=true;
+    const len=Math.floor(AC.sampleRate*2), b=AC.createBuffer(1,len,AC.sampleRate), d=b.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+    const src=AC.createBufferSource(); src.buffer=b; src.loop=true;
+    const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=110;
+    const g=AC.createGain(); g.gain.setValueAtTime(0.0001,AC.currentTime);
+    src.connect(f); f.connect(g); g.connect(MASTER||AC.destination); src.start();
+    g.gain.exponentialRampToValueAtTime(0.05,AC.currentTime+1.6);
+    AMB.src=src; AMB.gain=g;
+    AMB.t1=setInterval(()=>{if(AMB.on)[0,0.12,0.62,0.74].forEach(o=>nz(0.045,0.028,o,1700));},1900);
+    AMB.t2=setInterval(()=>{if(AMB.on&&Math.random()<0.55){tone(622,1.1,'triangle',0.02); tone(932,1.1,'triangle',0.015);}},26000);
+  }catch(e){if(!S.acWarn){S.acWarn=true; logErr('E27 audio',e);}}
+}
+function stopAmbient(){
+  if(!AMB.on)return; AMB.on=false;
+  clearInterval(AMB.t1); clearInterval(AMB.t2);
+  try{
+    if(AMB.gain&&AC)AMB.gain.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+1.1);
+    const s2=AMB.src;
+    if(s2)setTimeout(()=>{try{s2.stop();}catch(e){}},1300);
+  }catch(e){}
+  AMB.src=null; AMB.gain=null;
+}
+function maybeAmbient(){
+  if(innerWidth<760)return;
+  if(S.screen==='s-landing'||S.screen==='s-station'||(S.screen==='s-lobby'&&S.role==='host'))startAmbient();
+}
 function vibOK(){vib([40,60,40]);}
 
 /* ---------------- state ---------------- */
 const S={role:null,code:null,pid:null,name:'',emoji:'🚂',game:null,off:0,offKnown:false,everConn:false,
   screen:'',phaseKey:'',revealed:{},revealRetry:{},botTimers:[],builtQ:-1,builtQP:-1,localAns:{},goPlayed:{},
   earlyT:{},qrDone:false,lastQuip:{},raf:0,trace:[],lastSnapAt:0,lastHot:0,hbT:0,
+  lenN:10,practice:false,
   stWarn:false,acWarn:false,ckWarn:false,deckChecked:false,lastRenderErr:''};
 let db=null;
 const TS=()=>firebase.database.ServerValue.TIMESTAMP;
@@ -786,9 +907,14 @@ function go(id){
   S.screen=id;
   if(id==='s-landing'){startRail(); startLanding();}
   else if(id==='s-station'){startRail();}
-  else if(id==='s-join'){stopRail();}
+  else if(id==='s-join'||id==='s-pr'){stopRail();}
+  if(id==='s-landing'||id==='s-station'||(id==='s-lobby'&&S.role==='host'))maybeAmbient();
+  else stopAmbient();
   clearInterval(annT);
   if(id==='s-wait')startAnnounce();
+  clearInterval(insT);
+  if(id==='s-landing')startTicker('#insTick');
+  else if(id==='s-lobby'&&S.role==='host')startTicker('#lobTick');
 }
 const ANNOUNCE=[
   'The 09:15 to Value Delivery is running on cadence.',
@@ -815,6 +941,38 @@ function startAnnounce(){
     setTimeout(()=>{e.textContent='📢 '+ANNOUNCE[annIx]; e.style.opacity='';},350);
   },4200);
 }
+const INSIGHTS=[
+  'WSJF = cost of delay divided by job size.',
+  'A feature is sized so one ART can deliver it within one PI.',
+  'Uncommitted objectives count in the load, not in the commitment.',
+  'The PO accepts stories. Product Management accepts the system increment.',
+  'PI Planning: two days in person, three to four days virtual.',
+  'ROAM: Resolved, Owned, Accepted, Mitigated.',
+  'Business value is set with Business Owners, from 1 to 10.',
+  'The System Demo runs from staging, every two weeks.',
+  'Enablers extend the architectural runway. Features consume it.',
+  'Velocity example: 180 points over 6 iterations is 30 per iteration.',
+  'Iteration Planning outputs: committed goals and a committed backlog.',
+  'The Inspect and Adapt event has three parts.',
+  'Spikes reduce risk and sharpen estimates.',
+  'Design thinking: understand the problem, design the right solution.',
+  'GIGO: bad data can produce bad output that looks good.',
+  'Retro outcome: one or two improvement items into the team backlog.'
+];
+let insT=0, insIx=0;
+function startTicker(sel){
+  const e=document.querySelector(sel); if(!e)return;
+  insIx=Math.floor(Math.random()*INSIGHTS.length);
+  e.textContent='💡 '+INSIGHTS[insIx];
+  if(RM)return;
+  insT=setInterval(()=>{
+    const scr=e.closest('.screen');
+    if(scr&&!scr.classList.contains('on')){clearInterval(insT); return;}
+    insIx=(insIx+1)%INSIGHTS.length;
+    e.style.opacity='0';
+    setTimeout(()=>{e.textContent='💡 '+INSIGHTS[insIx]; e.style.opacity='';},350);
+  },5200);
+}
 function applyStation(l){if(document.body.dataset.st!==l){document.body.dataset.st=l;}}
 function saveSess(){try{sessionStorage.setItem('ss_sess',JSON.stringify(
   {role:S.role,code:S.code,pid:S.pid,name:S.name,emoji:S.emoji}));}catch(e){stWarn(e);}}
@@ -825,10 +983,10 @@ function leave(){
 }
 
 /* ---------------- deck helpers ---------------- */
-function makeDeck(lesson){
+function makeDeck(lesson,n){
   const pool=QUESTIONS[lesson];
   const idx=shuffle(Array.from(pool.keys()));
-  return idx.slice(0,PICK_N).map(p=>({p,o:shuffle(Array.from(pool[p].options.keys()))}));
+  return idx.slice(0,n||PICK_N).map(p=>({p,o:shuffle(Array.from(pool[p].options.keys()))}));
 }
 function deckQ(g,i){
   const entry=g.deck[i], src=QUESTIONS[g.lesson][entry.p];
@@ -869,7 +1027,7 @@ async function createGame(lesson){
     const ex=await fb('E04 check code',db.ref(ROOT+'/'+code+'/createdAt').get());
     if(ex.exists())continue;
     await fb('E04 create game',db.ref(ROOT+'/'+code).set(
-      {createdAt:TS(),version:APP_VERSION,lesson,phase:'lobby',qIndex:-1}));
+      {createdAt:TS(),version:APP_VERSION,lesson,pickN:S.lenN||PICK_N,phase:'lobby',qIndex:-1}));
     S.role='host'; S.code=code; S.revealed={}; saveSess(); attach(); SFX.ding();
     return;
   }
@@ -965,7 +1123,7 @@ async function resumeOrLand(){
 async function startQuestion(i){
   const g=S.game; if(!g)return;
   const upd={phase:'question',qIndex:i,questionStartAt:TS(),quip:null};
-  if(i===0)upd.deck=makeDeck(g.lesson);
+  if(i===0)upd.deck=makeDeck(g.lesson,g.pickN||PICK_N);
   await fb('E10 start stop '+(i+1),gref().update(upd));
 }
 async function hostReveal(){
@@ -1214,6 +1372,16 @@ function renderHost(g,ph,entered){
       const ans=(g.answers&&g.answers[g.qIndex])||{};
       const counts=dq.opts.map(()=>0); let tot=0;
       for(const pid in ans){const c=ans[pid].c; if(counts[c]!=null){counts[c]++; tot++;}}
+      const goAt=(g.questionStartAt||0)+COUNTDOWN_MS;
+      let fName=null,fMs=null;
+      for(const pid in ans){
+        const a2=ans[pid];
+        if(a2&&a2.c===dq.correctDisplay){
+          const el2=Math.max(0,(a2.at||goAt)-goAt);
+          if(fMs==null||el2<fMs){fMs=el2; fName=(g.players&&g.players[pid]&&g.players[pid].name)||'Passenger';}
+        }
+      }
+      $('#rvFast').textContent=fName?('⚡ Fastest correct ticket: '+fName+' in '+(fMs/1000).toFixed(1)+'s'):'';
       const bars=$('#bars'); bars.textContent='';
       dq.opts.forEach((o,ix)=>{
         const b=el('div','bar i'+ix);
@@ -1501,6 +1669,39 @@ function finishFinal(){
   $('#fhTitle').textContent='🏁 End of the line';
   $('#mtTitle').hidden=false; $('#manifest').hidden=false;
   $('#btnAgain').hidden=false; $('#btnCeleb').hidden=true;
+  buildReport(S.game);
+}
+function buildReport(g){
+  try{
+    if(!g||!g.deck){$('#report').hidden=true; return;}
+    const players=g.players||{};
+    const ids=Object.keys(players);
+    const deckN=g.deck.length||1;
+    let worst={i:-1,rate:-1};
+    g.deck.forEach((d,qi)=>{
+      const dq=deckQ(g,qi);
+      const am=(g.answers&&g.answers[qi])||{};
+      let good=0;
+      for(const pid in am){if(am[pid].c===dq.correctDisplay)good++;}
+      const rate=1-(good/Math.max(1,ids.length));
+      if(rate>worst.rate)worst={i:qi,rate};
+    });
+    let fast=null,fk=null,str=null,sk=0,sumC=0;
+    ids.forEach(pid=>{
+      const st=players[pid].stats||{};
+      sumC+=st.c||0;
+      if(st.f&&st.f<999999&&(fk==null||st.f<fk)){fk=st.f; fast=players[pid].name;}
+      if((st.b||0)>sk){sk=st.b||0; str=players[pid].name;}
+    });
+    const acc=Math.round(100*sumC/Math.max(1,ids.length*deckN));
+    const parts=[];
+    if(worst.i>=0)parts.push('🧱 Hardest stop: '+(worst.i+1)+' ('+Math.round(worst.rate*100)+'% missed)');
+    if(fast)parts.push('⚡ Sharpest fingers: '+fast+' ('+(fk/1000).toFixed(1)+'s)');
+    if(str&&sk>=2)parts.push('🔥 Longest streak: '+str+' ('+sk+')');
+    parts.push('🎯 Class accuracy: '+acc+'%');
+    $('#report').textContent=parts.join('    ·    ');
+    $('#report').hidden=false;
+  }catch(e){logErr('E28 report',e); $('#report').hidden=true;}
 }
 function endCelebration(){
   celebOn=false;
@@ -1593,12 +1794,20 @@ function startRail(){
   function fit(){cv.width=innerWidth; cv.height=innerHeight;}
   if(!railFit){railFit=true; addEventListener('resize',fit);}
   fit();
-  let off=0;
+  let off=0, streakAt=performance.now()+4500;
+  const stars=[];
+  for(let i=0;i<42;i++)stars.push({x:Math.random(),y:Math.random()*0.30,tw:Math.random()*6.28,sp:0.4+Math.random()});
   function frame(){
     if(!railOn)return;
+    const nw=performance.now();
     const a=getComputedStyle(document.body).getPropertyValue('--a1').trim()||'#38bdf8';
     ctx.clearRect(0,0,cv.width,cv.height);
     const cx=cv.width/2, hz=cv.height*0.34;
+    ctx.fillStyle=a;
+    stars.forEach(st2=>{
+      ctx.globalAlpha=0.22+0.3*Math.abs(Math.sin(st2.tw+nw*0.0006*st2.sp));
+      ctx.fillRect(st2.x*cv.width,st2.y*cv.height,2,2);
+    });
     ctx.strokeStyle=a; ctx.globalAlpha=0.16;
     for(let i=-9;i<=9;i++){
       ctx.beginPath(); ctx.moveTo(cx+i*26,hz);
@@ -1609,6 +1818,23 @@ function startRail(){
       const z=((k/16)+off)%1;
       const y=hz+Math.pow(z,2.2)*(cv.height-hz);
       ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cv.width,y); ctx.stroke();
+    }
+    for(let i=0;i<5;i++){
+      const lx=cv.width*(0.12+i*0.19);
+      const on2=Math.sin(nw*0.0012+i*1.7)>0;
+      ctx.globalAlpha=0.85; ctx.fillStyle=on2?'#34d399':'#fb7185';
+      ctx.beginPath(); ctx.arc(lx,hz-10,3,0,6.283); ctx.fill();
+      ctx.globalAlpha=0.22; ctx.beginPath(); ctx.arc(lx,hz-10,7,0,6.283); ctx.fill();
+    }
+    if(!RM&&nw>streakAt){
+      const p=(nw-streakAt)/650;
+      if(p>=1){streakAt=nw+7000+Math.random()*6000;}
+      else{
+        const sx=p*1.3*cv.width-0.15*cv.width;
+        ctx.globalAlpha=0.8; ctx.lineWidth=2; ctx.strokeStyle='#ffffff';
+        ctx.beginPath(); ctx.moveTo(sx-140,hz-4); ctx.lineTo(sx+40,hz-4); ctx.stroke();
+        ctx.lineWidth=1;
+      }
     }
     ctx.globalAlpha=1;
     if(!RM){off=(off+0.0022)%1; railRaf=requestAnimationFrame(frame);}
@@ -1651,7 +1877,7 @@ function startLanding(){
     plats.forEach(p=>p.classList.add('lit'));
     return;
   }
-  let lit=-2;
+  let lit=-2, lastPuff=0;
   const t0=performance.now();
   function tick(t){
     if(S.screen!=='s-landing')return;
@@ -1659,6 +1885,13 @@ function startLanding(){
     const x=-tw+(((t-t0)%T)/T)*total;
     train.style.transform='translateX('+x+'px)';
     const head=x+tw;
+    if(t-lastPuff>620&&head>10&&head<w-4){
+      lastPuff=t;
+      const pf=el('div','puff');
+      pf.style.left=(head-16)+'px'; pf.style.top='4px';
+      line.appendChild(pf);
+      setTimeout(()=>{try{line.removeChild(pf);}catch(e){}},1200);
+    }
     let cur=-1;
     for(let i=0;i<plats.length;i++){
       if(Math.abs(head-(LAND_FRAC[i]/100*w))<26){cur=i; break;}
@@ -1690,8 +1923,74 @@ function renderDebug(){
   $('#dblog').textContent=ERR.slice().reverse().join('\n')||'No errors logged. Lovely.';
 }
 
+/* ---------------- practice solo (fully local, no Firebase) ---------------- */
+const PR={deck:[],i:0,ok:0,lesson:null,answered:false};
+function startPractice(lesson){
+  PR.lesson=lesson; PR.ok=0; PR.i=0; PR.answered=false;
+  const pool=QUESTIONS[lesson];
+  const idx=shuffle(Array.from(pool.keys())).slice(0,S.lenN||PICK_N);
+  PR.deck=idx.map(p=>({p,o:shuffle(Array.from(pool[p].options.keys()))}));
+  applyStation(lesson);
+  $('#prPlay').style.display='flex'; $('#prDone').hidden=true;
+  go('s-pr'); SFX.whistle(); prRender();
+}
+function prQ(){
+  const e=PR.deck[PR.i], src=QUESTIONS[PR.lesson][e.p];
+  return {text:src.q, opts:e.o.map(oi=>src.options[oi]), cd:e.o.indexOf(src.answer)};
+}
+function prRender(){
+  const q=prQ(); PR.answered=false;
+  $('#prStop').textContent='Practice stop '+(PR.i+1)+' of '+PR.deck.length+'   ·   ✔ '+PR.ok;
+  $('#prText').textContent=q.text;
+  const box=$('#prOpts'); box.textContent='';
+  q.opts.forEach((o,ix)=>{
+    const b=el('button','opt i'+ix);
+    b.appendChild(el('span','sh',SHAPES[ix])); b.appendChild(el('span',null,o));
+    b.addEventListener('click',()=>prAnswer(ix));
+    box.appendChild(b);
+  });
+  $('#prNext').hidden=true;
+  $('#prMsg').textContent=''; $('#prMsg').className='prmsg';
+}
+function prAnswer(ix){
+  if(PR.answered)return; PR.answered=true;
+  const q=prQ(); const right=(ix===q.cd);
+  if(right){PR.ok++; SFX.right();} else {SFX.wrong(); vib([100]);}
+  Array.prototype.forEach.call($('#prOpts').children,(b,k)=>{
+    b.disabled=true;
+    if(k===q.cd)b.classList.add('right');
+    else if(k===ix)b.classList.add('deadpick');
+    else b.classList.add('dead');
+  });
+  $('#prMsg').textContent=right?'Correct! Ticket accepted.':'Not this one. The correct answer is highlighted.';
+  $('#prMsg').className='prmsg '+(right?'ok':'bad');
+  $('#prStop').textContent='Practice stop '+(PR.i+1)+' of '+PR.deck.length+'   ·   ✔ '+PR.ok;
+  const btn=$('#prNext');
+  btn.hidden=false;
+  btn.textContent=(PR.i<PR.deck.length-1)?'Next stop 🚉':'Finish 🏁';
+}
+function prNext(){
+  if(PR.i<PR.deck.length-1){PR.i++; SFX.ding(); prRender(); return;}
+  $('#prPlay').style.display='none'; $('#prDone').hidden=false;
+  $('#prScore').textContent='✔ '+PR.ok+' / '+PR.deck.length;
+  $('#prQuip').textContent=
+    (PR.ok===PR.deck.length)?'Perfect run. The Business Owners are weeping with joy.':
+    (PR.ok>=Math.ceil(PR.deck.length*0.7))?'Strong service. Nearly ready for the exam line.':
+    'Good warm-up. The Conductor recommends another loop.';
+  SFX.fanfare();
+}
+
 /* ---------------- wire up ---------------- */
 function buildStatic(){
+  const lr=$('#lenRow');
+  [5,10,15].forEach(n=>{
+    const b=el('button','lenb'+(n===10?' sel':''),n+' stops');
+    b.type='button';
+    b.addEventListener('click',()=>{S.lenN=n;
+      lr.querySelectorAll('button').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel'); SFX.click();});
+    lr.appendChild(b);
+  });
   const sg=$('#stgrid');
   Object.keys(LESSONS).forEach(k=>{
     const L=LESSONS[k];
@@ -1699,7 +1998,11 @@ function buildStatic(){
     c.appendChild(el('div','ln',L.ln));
     c.appendChild(el('div','nm',L.name));
     c.appendChild(el('div','tg',L.tag));
-    c.addEventListener('click',()=>busy(c,()=>createGame(k)));
+    c.appendChild(el('div','tp',L.top));
+    c.addEventListener('click',()=>{
+      if(S.practice){ensureAudio(); startPractice(k);}
+      else busy(c,()=>createGame(k));
+    });
     sg.appendChild(c);
   });
   const eg=$('#emg');
@@ -1712,7 +2015,20 @@ function buildStatic(){
   });
 }
 function wire(){
-  $('#btnHost').addEventListener('click',()=>{ensureAudio(); startRail(); go('s-station');});
+  $('#btnHost').addEventListener('click',()=>{ensureAudio(); S.practice=false;
+    $('#stTitle').textContent='Choose your line'; startRail(); go('s-station');});
+  $('#btnPractice').addEventListener('click',()=>{ensureAudio(); S.practice=true;
+    $('#stTitle').textContent='Practice run: choose your line'; go('s-station');});
+  $('#btnHow').addEventListener('click',()=>{$('#howov').hidden=false;});
+  $('#howClose').addEventListener('click',()=>{$('#howov').hidden=true;});
+  $('#codebig').addEventListener('click',()=>{if(!S.code)return;
+    $('#codeovTxt').textContent=S.code; $('#codeov').hidden=false;});
+  $('#codeov').addEventListener('click',()=>{$('#codeov').hidden=true;});
+  $('#muteBtn').addEventListener('click',()=>{ensureAudio(); setMute(!MUTED);});
+  $('#prNext').addEventListener('click',()=>prNext());
+  $('#prAgain').addEventListener('click',()=>startPractice(PR.lesson));
+  $('#prQuit').addEventListener('click',()=>{document.body.dataset.st='hub'; go('s-landing');});
+  $('#prHome').addEventListener('click',()=>{document.body.dataset.st='hub'; go('s-landing');});
   $('#btnJoinGo').addEventListener('click',()=>{ensureAudio(); go('s-join');});
   $('#btnBackL').addEventListener('click',()=>go('s-landing'));
   $('#btnBackJ').addEventListener('click',()=>go('s-landing'));
@@ -1727,7 +2043,7 @@ function wire(){
   }));
   $('#btnAgain').addEventListener('click',()=>leave());
   $('#btnCeleb').addEventListener('click',()=>endCelebration());
-  document.addEventListener('pointerdown',()=>ensureAudio(),{passive:true});
+  document.addEventListener('pointerdown',()=>{ensureAudio(); maybeAmbient();},{passive:true});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureAudio();});
   $('#vtag').addEventListener('click',()=>{const d=$('#debug'); d.hidden=!d.hidden; renderDebug();});
   $('#dbClose').addEventListener('click',()=>{$('#debug').hidden=true;});
@@ -1754,9 +2070,12 @@ buildStatic();
 buildLanding();
 wire();
 updateVtag();
+try{setMute(sessionStorage.getItem('ss_mute')==='1');}catch(e){setMute(false);}
 S.screen='s-landing';
 startRail();
 startLanding();
+startTicker('#insTick');
+maybeAmbient();
 if(initFB())resumeOrLand();
 </script>
 </body>
