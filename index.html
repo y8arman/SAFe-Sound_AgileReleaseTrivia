@@ -363,8 +363,10 @@
   #report{width:100%; max-width:1100px; margin-top:10px; background:var(--panel);
     border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:10px;
     padding:9px 14px; font-size:.8rem; font-weight:700; color:var(--ink); text-align:center;}
-  .tickline{transition:opacity .3s; color:var(--gold); font-size:.8rem; margin-top:14px;
-    letter-spacing:.04em; min-height:2.2em; max-width:640px; text-align:center;}
+  .tickline{transition:opacity .3s; color:var(--gold); font-weight:700;
+    font-size:clamp(1.05rem,2.4vw,1.55rem); margin-top:16px; letter-spacing:.03em;
+    min-height:2.4em; max-width:880px; text-align:center; line-height:1.4;
+    text-shadow:0 0 12px rgba(251,191,36,.35);}
   #lobTick{margin-top:10px; font-size:.74rem;}
   #codeov{position:fixed; inset:0; z-index:66; background:rgba(2,4,10,.97); display:flex;
     flex-direction:column; align-items:center; justify-content:center; cursor:pointer;}
@@ -376,12 +378,20 @@
   #howov h3{margin-bottom:10px;}
   #howov p{color:var(--dim); line-height:1.55; margin:8px 0; font-size:.95rem;}
   #howov b{color:var(--ink);}
-  #muteBtn{background:none; border:1px solid var(--line); border-radius:8px;
+  #muteBtn,#homeBtn{background:none; border:1px solid var(--line); border-radius:8px;
     padding:3px 9px; color:var(--dim); font-size:.85rem; cursor:pointer;}
   .prmsg{margin-top:12px; font-weight:800; min-height:1.4em; text-align:center;}
   .prmsg.ok{color:var(--ok);} .prmsg.bad{color:var(--bad);}
   .opt.deadpick{border-color:var(--bad); opacity:1; box-shadow:0 0 14px rgba(251,113,133,.4);}
   button.opt[disabled]{cursor:default;}
+
+  #s-landing{position:relative;}
+  .creditbar{position:absolute; left:0; right:0; bottom:6px; overflow:hidden; pointer-events:none;}
+  .creditbar span{display:inline-block; white-space:nowrap; padding-left:100%;
+    font-weight:900; font-size:clamp(1.05rem,2.6vw,1.7rem); letter-spacing:.06em;
+    color:var(--gold); text-shadow:0 0 14px rgba(251,191,36,.55), 0 0 36px rgba(251,191,36,.28);
+    animation:creditmove 18s linear infinite; will-change:transform;}
+  @keyframes creditmove{to{transform:translateX(-100%);}}
 
   @media (max-width:640px){
     .opts{grid-template-columns:1fr;}
@@ -391,7 +401,9 @@
   }
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation:none !important; transition:none !important;}
+    .creditbar span{padding-left:0; white-space:normal; display:block; text-align:center; font-size:.95rem;}
   }
+  [hidden]{display:none !important;}
 </style>
 </head>
 <body data-st="hub">
@@ -415,7 +427,7 @@
     </div>
     <div class="tickline mono" id="insTick"></div>
     <button class="btn ghost" id="btnHow" style="margin-top:12px; padding:8px 18px; font-size:.85rem;">❓ How to play</button>
-    <div class="credit">Built by BARY with Love for the Wavestone London POPM Training in July 2026</div>
+    <div class="creditbar" aria-label="Built by BARY with Love for the Wavestone London POPM Training in July 2026"><span>Built by BARY with Love for the Wavestone London POPM Training in July 2026 🚂</span></div>
   </div></section>
 
   <section id="s-station" class="screen"><div class="wrap">
@@ -584,10 +596,11 @@
 <canvas id="confc"></canvas>
 <div id="toast" role="alert"></div>
 <div id="statusbar">
+  <button id="homeBtn" title="Back to the start screen">🏠</button>
   <span class="dot" id="conn"></span><span id="connt">connecting…</span>
   <span id="sbcode" class="mono"></span>
   <button id="muteBtn">🔊</button>
-  <button id="vtag" class="mono">SAFe&amp;SOUND v1.6 (2026-07-25)</button>
+  <button id="vtag" class="mono">SAFe&amp;SOUND v1.96 (2026-07-25)</button>
 </div>
 <div id="debug" hidden>
   <h3>🔧 Debug panel</h3>
@@ -622,7 +635,7 @@ const firebaseConfig = {
 };
 /* ===================================================================== */
 
-const APP_VERSION='v1.6 (2026-07-25)';
+const APP_VERSION='v1.96 (2026-07-25)';
 const ROOT='st_games';
 const PICK_N=10, TOP_N=10, COUNTDOWN_MS=3000, CALL_TIMEOUT=9000;
 
@@ -788,7 +801,7 @@ function ensureAudio(){try{
   }
   if(AC.state==='suspended')AC.resume();
 }catch(e){if(!S.acWarn){S.acWarn=true; logErr('E27 audio',e);}}}
-function tone(f,dur,type,vol,when,slide){try{
+function tone(f,dur,type,vol,when,slide,dest){try{
   if(!AC)return; if(AC.state!=='running'){try{AC.resume();}catch(x){}}
   const t0=AC.currentTime+(when||0);
   const o=AC.createOscillator(), g=AC.createGain();
@@ -797,9 +810,9 @@ function tone(f,dur,type,vol,when,slide){try{
   g.gain.setValueAtTime(0.0001,t0);
   g.gain.exponentialRampToValueAtTime(vol||0.12,t0+0.015);
   g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-  o.connect(g); g.connect(MASTER||AC.destination); o.start(t0); o.stop(t0+dur+0.05);
+  o.connect(g); g.connect(dest||MASTER||AC.destination); o.start(t0); o.stop(t0+dur+0.05);
 }catch(e){}}
-function nz(dur,vol,when,fc){try{
+function nz(dur,vol,when,fc,dest){try{
   if(!AC)return; if(AC.state!=='running'){try{AC.resume();}catch(x){}}
   const t0=AC.currentTime+(when||0);
   const len=Math.max(1,Math.floor(AC.sampleRate*dur));
@@ -809,7 +822,7 @@ function nz(dur,vol,when,fc){try{
   const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=fc||1200;
   const g=AC.createGain(); g.gain.setValueAtTime(vol||0.1,t0);
   g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-  s.connect(f); f.connect(g); g.connect(MASTER||AC.destination); s.start(t0); s.stop(t0+dur);
+  s.connect(f); f.connect(g); g.connect(dest||MASTER||AC.destination); s.start(t0); s.stop(t0+dur);
 }catch(e){}}
 const SFX={
   tick(){tone(880,0.07,'square',0.08);},
@@ -837,32 +850,73 @@ const SFX={
   tock(){tone(700,0.05,'square',0.07);},
   punch(){tone(1250,0.04,'square',0.06); nz(0.07,0.07,0.02,900); tone(523,0.09,'triangle',0.08,0.05);}
 };
-/* ambient rolling-train loop (host screens only, all through MASTER so mute rules it) */
-const AMB={on:false,src:null,gain:null,t1:0,t2:0};
+/* ambient soundtrack (host screens only): music loop + train layer + horns, all via MASTER so mute rules it */
+const AMB={on:false,src:null,bus:null,lp:null,t1:0,t2:0,next:0,bar:0};
+const AMB_BAR=2.609;
+const AMB_PROG=[
+  [220,261.63,329.63,110],
+  [174.61,220,261.63,87.31],
+  [130.81,164.81,196,65.41],
+  [196,246.94,293.66,98]
+];
+const AMB_ARP=[[2,5,6],[3,6,7],[2,4,7],[1,5,6]];
+function ambBar(t0,bi){
+  const rel=Math.max(0,t0-AC.currentTime);
+  const ch=AMB_PROG[bi%4], e=AMB_BAR/8, beat=AMB_BAR/4, B=AMB.bus;
+  ch.slice(0,3).forEach(f=>tone(f,AMB_BAR*0.96,'triangle',0.045,rel,0,B));
+  [0,2].forEach(b=>tone(ch[3],0.38,'sine',0.09,rel+b*beat,0,B));
+  [0,2].forEach(b=>{nz(0.04,0.05,rel+b*beat,1500,B); nz(0.04,0.045,rel+b*beat+0.09,1500,B);});
+  for(let h=1;h<8;h++){if(Math.random()<0.72)nz(0.03,0.02,rel+h*e,6000,B);}
+  AMB_ARP[bi%4].forEach((ix,k)=>tone(ch[k%3]*2,0.14,'square',0.038,rel+ix*e,0,B));
+}
 function startAmbient(){
   try{
     ensureAudio(); if(!AC||AMB.on)return; AMB.on=true;
+    if(!AMB.bus){
+      AMB.bus=AC.createGain(); AMB.lp=AC.createBiquadFilter();
+      AMB.lp.type='lowpass'; AMB.lp.frequency.value=4800;
+      AMB.bus.connect(AMB.lp); AMB.lp.connect(MASTER||AC.destination);
+      AMB.bus.gain.value=0.0001;
+    }
+    AMB.bus.gain.cancelScheduledValues(AC.currentTime);
+    AMB.bus.gain.setValueAtTime(Math.max(AMB.bus.gain.value||0.0001,0.0001),AC.currentTime);
+    AMB.bus.gain.exponentialRampToValueAtTime(0.9,AC.currentTime+1.5);
     const len=Math.floor(AC.sampleRate*2), b=AC.createBuffer(1,len,AC.sampleRate), d=b.getChannelData(0);
     for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
     const src=AC.createBufferSource(); src.buffer=b; src.loop=true;
     const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=110;
-    const g=AC.createGain(); g.gain.setValueAtTime(0.0001,AC.currentTime);
-    src.connect(f); f.connect(g); g.connect(MASTER||AC.destination); src.start();
-    g.gain.exponentialRampToValueAtTime(0.05,AC.currentTime+1.6);
-    AMB.src=src; AMB.gain=g;
-    AMB.t1=setInterval(()=>{if(AMB.on)[0,0.12,0.62,0.74].forEach(o=>nz(0.045,0.028,o,1700));},1900);
-    AMB.t2=setInterval(()=>{if(AMB.on&&Math.random()<0.55){tone(622,1.1,'triangle',0.02); tone(932,1.1,'triangle',0.015);}},26000);
+    const g=AC.createGain(); g.gain.value=0.09;
+    src.connect(f); f.connect(g); g.connect(AMB.bus); src.start();
+    AMB.src=src;
+    AMB.next=AC.currentTime+0.15; AMB.bar=0;
+    AMB.t1=setInterval(()=>{
+      if(!AMB.on||!AC)return;
+      while(AMB.next<AC.currentTime+0.55){
+        ambBar(AMB.next,AMB.bar);
+        AMB.bar=(AMB.bar+1)%4;
+        AMB.next+=AMB_BAR;
+      }
+    },200);
+    AMB.t2=setInterval(()=>{
+      if(!AMB.on||Math.random()>=0.55)return;
+      tone(311,1.05,'triangle',0.05,0,0,AMB.bus); tone(415,1.05,'triangle',0.045,0,0,AMB.bus);
+      tone(311,0.5,'triangle',0.035,1.25,0,AMB.bus); tone(415,0.5,'triangle',0.03,1.25,0,AMB.bus);
+    },14000);
   }catch(e){if(!S.acWarn){S.acWarn=true; logErr('E27 audio',e);}}
 }
 function stopAmbient(){
   if(!AMB.on)return; AMB.on=false;
   clearInterval(AMB.t1); clearInterval(AMB.t2);
   try{
-    if(AMB.gain&&AC)AMB.gain.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+1.1);
+    if(AMB.bus&&AC){
+      AMB.bus.gain.cancelScheduledValues(AC.currentTime);
+      AMB.bus.gain.setValueAtTime(Math.max(AMB.bus.gain.value,0.001),AC.currentTime);
+      AMB.bus.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+1.1);
+    }
     const s2=AMB.src;
     if(s2)setTimeout(()=>{try{s2.stop();}catch(e){}},1300);
   }catch(e){}
-  AMB.src=null; AMB.gain=null;
+  AMB.src=null;
 }
 function maybeAmbient(){
   if(innerWidth<760)return;
@@ -2025,6 +2079,15 @@ function wire(){
     $('#codeovTxt').textContent=S.code; $('#codeov').hidden=false;});
   $('#codeov').addEventListener('click',()=>{$('#codeov').hidden=true;});
   $('#muteBtn').addEventListener('click',()=>{ensureAudio(); setMute(!MUTED);});
+  $('#homeBtn').addEventListener('click',()=>{
+    if(S.code&&S.game&&S.game.phase!=='final'){
+      const msg=(S.role==='host')
+        ?'This will leave the game you are hosting. Return to the start screen?'
+        :'This will leave the current game. You can rejoin with the same code. Return to the start screen?';
+      if(!confirm(msg))return;
+    }
+    leave();
+  });
   $('#prNext').addEventListener('click',()=>prNext());
   $('#prAgain').addEventListener('click',()=>startPractice(PR.lesson));
   $('#prQuit').addEventListener('click',()=>{document.body.dataset.st='hub'; go('s-landing');});
