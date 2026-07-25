@@ -479,12 +479,13 @@
 
 </div>
 
+<div id="cdov"><div id="cdnum"></div></div>
 <canvas id="confc"></canvas>
 <div id="toast" role="alert"></div>
 <div id="statusbar">
   <span class="dot" id="conn"></span><span id="connt">connecting…</span>
   <span id="sbcode" class="mono"></span>
-  <button id="vtag" class="mono">SAFe&amp;SOUND v1.2 (2026-07-25)</button>
+  <button id="vtag" class="mono">SAFe&amp;SOUND v1.3 (2026-07-25)</button>
 </div>
 <div id="debug" hidden>
   <h3>🔧 Debug panel</h3>
@@ -497,9 +498,9 @@
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
 <script>
 'use strict';
 /* =====================================================================
@@ -516,7 +517,7 @@ const firebaseConfig = {
 };
 /* ===================================================================== */
 
-const APP_VERSION='v1.2 (2026-07-25)';
+const APP_VERSION='v1.3 (2026-07-25)';
 const ROOT='st_games';
 const PICK_N=10, TOP_N=10, COUNTDOWN_MS=3000, CALL_TIMEOUT=9000;
 
@@ -592,7 +593,10 @@ function logErr(ctx,e){
 let toastT=null;
 function toast(msg){const t=$('#toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),5200);}
-window.addEventListener('error',ev=>logErr('window',ev.error||ev.message));
+window.addEventListener('error',ev=>{
+  const where=ev.filename?(' @ '+String(ev.filename).split('/').pop()+':'+ev.lineno):'';
+  logErr('window',((ev.error&&ev.error.message)||ev.message||'error')+where);
+});
 window.addEventListener('unhandledrejection',ev=>logErr('promise',ev.reason));
 
 function withTimeout(p){return new Promise((res,rej)=>{
