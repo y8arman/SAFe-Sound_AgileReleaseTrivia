@@ -74,7 +74,7 @@
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:radial-gradient(1200px 700px at 50% -10%, var(--bg1), var(--bg0) 70%);
-    color:var(--ink); overflow:hidden;
+    color:var(--ink); overflow:hidden; overscroll-behavior-y:none;
   }
   button{font-family:inherit; color:inherit;}
   #bgc{position:fixed; inset:0; z-index:0; pointer-events:none;}
@@ -211,7 +211,7 @@
     font-weight:700; text-align:center; max-width:900px; line-height:1.4;}
   .quip::before{content:"🎩 THE CONDUCTOR: "; color:var(--dim); font-size:.72em; letter-spacing:.1em;}
   .bars{width:100%; max-width:860px; margin-top:8px; display:flex; flex-direction:column; gap:8px;}
-  .bar{display:grid; grid-template-columns:34px 1fr 44px; gap:10px; align-items:center;}
+  .bar{display:grid; grid-template-columns:34px 1fr 86px; gap:10px; align-items:center;}
   .bar .sh{width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.9rem;}
   .bar .trk{height:22px; border-radius:8px; background:rgba(255,255,255,.06); overflow:hidden;}
   .bar .fl{height:100%; width:0; border-radius:8px; transition:width .8s cubic-bezier(.2,.8,.3,1);}
@@ -403,6 +403,9 @@
     *,*::before,*::after{animation:none !important; transition:none !important;}
     .creditbar span{padding-left:0; white-space:normal; display:block; text-align:center; font-size:.95rem;}
   }
+  body.laststop .rail{border-color:var(--gold);
+    background:repeating-linear-gradient(90deg, rgba(251,191,36,.32) 0 14px, transparent 14px 26px);}
+  body.laststop .rail .tr{filter:drop-shadow(0 0 10px var(--gold));}
   [hidden]{display:none !important;}
 </style>
 </head>
@@ -461,6 +464,7 @@
         <div style="display:flex; align-items:baseline; justify-content:space-between;">
           <strong id="plc">0 aboard</strong>
           <span class="hint" style="margin:0;">Press <b>B</b> for 15 test bots</span>
+          <button class="btn ghost" id="btnSndChk" style="padding:4px 10px; font-size:.75rem;">🔔 Sound check</button>
         </div>
         <div id="train"></div>
         <button class="btn" id="btnStart" style="margin-top:12px;" disabled>Waiting for passengers…</button>
@@ -558,6 +562,7 @@
     <div id="manifest" hidden></div>
     <div class="btnrow" style="margin-top:10px;">
       <button class="btn" id="btnCeleb" hidden>End celebration 🛎️</button>
+      <button class="btn ghost" id="btnCopyRes" hidden>📋 Copy results</button>
       <button class="btn ghost" id="btnAgain" hidden>Run it again 🔁</button>
     </div>
   </div></section>
@@ -600,7 +605,7 @@
   <span class="dot" id="conn"></span><span id="connt">connecting…</span>
   <span id="sbcode" class="mono"></span>
   <button id="muteBtn">🔊</button>
-  <button id="vtag" class="mono">SAFe&amp;SOUND v1.96 (2026-07-25)</button>
+  <button id="vtag" class="mono">SAFe&amp;SOUND v1.97 (2026-07-25)</button>
 </div>
 <div id="debug" hidden>
   <h3>🔧 Debug panel</h3>
@@ -635,7 +640,7 @@ const firebaseConfig = {
 };
 /* ===================================================================== */
 
-const APP_VERSION='v1.96 (2026-07-25)';
+const APP_VERSION='v1.97 (2026-07-25)';
 const ROOT='st_games';
 const PICK_N=10, TOP_N=10, COUNTDOWN_MS=3000, CALL_TIMEOUT=9000;
 
@@ -1335,6 +1340,7 @@ function onEnter(g,ph){
     checkDeck(g);
     const last=!!(g.deck&&g.qIndex>=g.deck.length-1);
     $('#dblBan').hidden=!last;
+    document.body.classList.toggle('laststop',last);
     if(last){
       SFX.klaxon();
       if(!RM)S.hbT=setInterval(()=>SFX.heart(),950);
@@ -1344,6 +1350,7 @@ function onEnter(g,ph){
   }else{
     $('#cdov').classList.remove('on');
     $('#dblBan').hidden=true;
+    document.body.classList.remove('laststop');
     S.botTimers.forEach(clearTimeout); S.botTimers=[];
   }
   if(ph==='reveal'){
@@ -1441,7 +1448,8 @@ function renderHost(g,ph,entered){
         const b=el('div','bar i'+ix);
         b.appendChild(el('span','sh',SHAPES[ix]));
         const trk=el('div','trk'); const fl=el('div','fl'); trk.appendChild(fl); b.appendChild(trk);
-        b.appendChild(el('span','ct',String(counts[ix])));
+        const pc2=tot?Math.round(counts[ix]/tot*100):0;
+        b.appendChild(el('span','ct',counts[ix]+' · '+pc2+'%'));
         bars.appendChild(b);
         requestAnimationFrame(()=>{fl.style.width=(tot?Math.round(counts[ix]/tot*100):0)+'%';});
       });
@@ -1701,7 +1709,7 @@ function runPodium(g){
   });
   $('#fhTitle').textContent='🎉 And your winners are...';
   $('#mtTitle').hidden=true; man.hidden=true;
-  $('#btnAgain').hidden=true; $('#btnCeleb').hidden=true;
+  $('#btnAgain').hidden=true; $('#btnCeleb').hidden=true; $('#btnCopyRes').hidden=true;
   if(RM){
     ['#pod1','#pod2','#pod3'].forEach(s=>$(s).classList.add('in'));
     SFX.fanfare(); finishFinal(); return;
@@ -1722,7 +1730,7 @@ function startCelebration(){
 function finishFinal(){
   $('#fhTitle').textContent='🏁 End of the line';
   $('#mtTitle').hidden=false; $('#manifest').hidden=false;
-  $('#btnAgain').hidden=false; $('#btnCeleb').hidden=true;
+  $('#btnAgain').hidden=false; $('#btnCeleb').hidden=true; $('#btnCopyRes').hidden=false;
   buildReport(S.game);
 }
 function buildReport(g){
@@ -2087,6 +2095,20 @@ function wire(){
       if(!confirm(msg))return;
     }
     leave();
+  });
+  $('#btnSndChk').addEventListener('click',()=>{ensureAudio(); SFX.whistle(); setTimeout(()=>SFX.right(),800);});
+  $('#btnCopyRes').addEventListener('click',()=>{
+    const g=S.game; if(!g)return;
+    const deckN=(g.deck&&g.deck.length)||0;
+    const lines=['SAFe & SOUND results · '+((LESSONS[g.lesson]&&LESSONS[g.lesson].name)||g.lesson)+' · '+deckN+' stops'];
+    playersArr(g).forEach((p,ix)=>{
+      const st=p.stats||{};
+      lines.push('#'+(ix+1)+'  '+(p.name||'Passenger')+'  '+(p.score||0)+' pts  ('+(st.c||0)+'/'+deckN+' correct)');
+    });
+    const txt=lines.join('\n');
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(()=>toast('Results copied to the clipboard.'),()=>toast('Copy failed. A screenshot works too.'));
+    }else toast('Copy not supported in this browser.');
   });
   $('#prNext').addEventListener('click',()=>prNext());
   $('#prAgain').addEventListener('click',()=>startPractice(PR.lesson));
