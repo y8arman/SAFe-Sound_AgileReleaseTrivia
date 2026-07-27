@@ -362,7 +362,8 @@
   @keyframes mvpp{from{box-shadow:0 0 14px rgba(251,191,36,.45);} to{box-shadow:0 0 34px rgba(251,191,36,.95);}}
   #report{width:100%; max-width:1100px; margin-top:10px; background:var(--panel);
     border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:10px;
-    padding:9px 14px; font-size:.8rem; font-weight:700; color:var(--ink); text-align:center;}
+    padding:9px 14px; font-size:.8rem; font-weight:700; color:var(--ink); text-align:center;
+    white-space:pre-line; line-height:1.55;}
   .tickline{transition:opacity .3s; color:var(--gold); font-weight:700;
     font-size:clamp(1.05rem,2.4vw,1.55rem); margin-top:16px; letter-spacing:.03em;
     min-height:2.4em; max-width:880px; text-align:center; line-height:1.4;
@@ -392,6 +393,13 @@
     color:var(--gold); text-shadow:0 0 14px rgba(251,191,36,.55), 0 0 36px rgba(251,191,36,.28);
     animation:creditmove 18s linear infinite; will-change:transform;}
   @keyframes creditmove{to{transform:translateX(-100%);}}
+
+  .verdict .vst.blaze{animation:blaze .9s ease-in-out infinite alternate; font-size:1.15em;}
+  .verdict .vst.blaze.big{font-size:1.45em;}
+  @keyframes blaze{from{text-shadow:0 0 6px rgba(251,191,36,.4);}
+    to{text-shadow:0 0 22px rgba(251,146,60,.95); transform:scale(1.05);}}
+  #rvFast.rec{color:var(--gold); font-weight:900; animation:recp .5s ease-in-out 5 alternate;}
+  @keyframes recp{to{text-shadow:0 0 18px rgba(251,191,36,.95); transform:scale(1.03);}}
 
   @media (max-width:640px){
     .opts{grid-template-columns:1fr;}
@@ -452,6 +460,7 @@
 
   <section id="s-lobby" class="screen"><div class="wrap">
     <div class="board mono" id="lobbyLine">SERVICE: ON TIME</div>
+    <div class="quip" id="lobWelcome" style="font-size:clamp(.85rem,1.8vw,1.05rem);"></div>
     <div class="lobbygrid">
       <div class="lpanel" style="align-items:center;">
         <div class="sub" style="letter-spacing:.2em; margin-bottom:8px;">Scan to board</div>
@@ -605,7 +614,7 @@
   <span class="dot" id="conn"></span><span id="connt">connecting…</span>
   <span id="sbcode" class="mono"></span>
   <button id="muteBtn">🔊</button>
-  <button id="vtag" class="mono">SAFe&amp;SOUND v1.97 (2026-07-25)</button>
+  <button id="vtag" class="mono">SAFe&amp;SOUND v1.98 (2026-07-25)</button>
 </div>
 <div id="debug" hidden>
   <h3>🔧 Debug panel</h3>
@@ -640,7 +649,7 @@ const firebaseConfig = {
 };
 /* ===================================================================== */
 
-const APP_VERSION='v1.97 (2026-07-25)';
+const APP_VERSION='v1.98 (2026-07-25)';
 const ROOT='st_games';
 const PICK_N=10, TOP_N=10, COUNTDOWN_MS=3000, CALL_TIMEOUT=9000;
 
@@ -653,6 +662,13 @@ const LESSONS={
   lesson4:{ln:'L4',name:'Iteration Station',tag:'This service calls at Card, Conversation and Confirmation.',top:'Stories · Estimating · Iteration events'},
   lesson5:{ln:'L5',name:'Inspect & Adapt Terminal',tag:'End of the line. Time to find the root cause.',top:'System Demo · I&A · Responsible AI'}
 };
+const LOB_WELCOME={
+  lesson1:'Welcome aboard the Mindset Central service. Please keep your assumptions clear of the closing doors.',
+  lesson2:'This is the WSJF Junction service, where the shortest jobs board first and the big ones wait politely.',
+  lesson3:'Now arriving: Planning Platform. Two days of alignment, compressed into a handful of stops.',
+  lesson4:'The Iteration Station service calls at Card, Conversation, and Confirmation. Mind the definition of done.',
+  lesson5:'Terminating at Inspect and Adapt. All root causes must be declared at customs.'
+};
 const EMOJIS=['🚂','🎫','🦉','🧭','🚦','⏱️','📈','⚡','🧠','🤖','🔮','🃏','🔥','🧊','🦄','🐙','🎩','🛎️','🦆','☕','🍕','🐝','🚀','🚐'];
 const BOTN=['WSJF Wizard','Kanban Ken','PI Petra','Sprint Sandra','Epic Erik','Story Stan','Velocity Val','Backlog Bella','Roadmap Rita','Enabler Ed','Spike Sam','Retro Rosa','Demo Dana','Flow Finn','Sync Sofia'];
 const SHAPES=['▲','◆','●','■'];
@@ -664,63 +680,99 @@ const QUIPS={
     '{n}, that was not an answer, that was Continuous Deployment.',
     'First through the turnstile: {n}. Oyster card fully charged.',
     '{n} took the fast lane on the ART Kanban. Straight to Done.',
-    'Signal green, brain greener. {n} in {t}s.'],
+    'Signal green, brain greener. {n} in {t}s.',
+    '{n} at {t}s. Decentralized decision-making at its finest.',
+    'Green light, green brain. {n} needed only {t}s.',
+    '{n} answered before the train even settled. {t}s.',
+    'Ticket punched in {t}s. {n} clearly refined this item in advance.',
+    '{n} pulled that one straight from the ready column. {t}s.',
+    'The signal barely changed and {n} was through. {t}s flat.'],
   streak:[
     '{n} is on a {k} streak. That is what we call sustainable pace.',
     '{k} in a row. Someone check {n}\'s WIP limit.',
     '{n}\'s streak hit {k}. The architectural runway just got longer.',
     'Relentless improvement, {n}. The retro will be short.',
-    '{k} straight for {n}. Fist of five from the whole carriage.'],
+    '{k} straight for {n}. Fist of five from the whole carriage.',
+    '{n} makes it {k} straight. The definition of done keeps being met.',
+    '{k} in a row for {n}. That is not luck, that is architectural runway.',
+    'The {n} express does not stop. {k} and counting.',
+    '{n} at {k} straight. Business Owners assigning a value of 10.',
+    'Streak {k}. {n} is basically a continuous delivery pipeline now.'],
   overtake:[
     '{n} passes {o} on the inside rail. Mind the gap, {o}.',
     '{n} climbs {k} places. Call it a planning adjustment.',
     'Signal change! {n} has been reprioritized to the top of the backlog.',
-    '{n} just overtook {o}. WSJF in action: shortest job first.'],
+    '{n} just overtook {o}. WSJF in action: shortest job first.',
+    '{n} moves up {k}. The roadmap said this would happen.',
+    'Rebalancing complete: {n} takes work, and points, from {o}.',
+    '{n} slides past {o} like a feature past a WIP limit at five to five.',
+    'Overtake! {n} up {k} places. {o}, consider a spike.'],
   allRight:[
     'Full marks across the train. Confidence vote: five fingers everywhere.',
     'Everyone aboard got it. That is one aligned ART.',
-    'All correct. The Business Owners are weeping with joy.'],
+    'All correct. The Business Owners are weeping with joy.',
+    'Every carriage aligned. This is what cadence sounds like.',
+    'A full sweep. The retro will simply say: continue.',
+    'Everyone correct. Somebody has been reading the workbook on the quiet.'],
   allWrong:[
     'Nobody? Right. Root cause analysis at the next Inspect and Adapt.',
     'A clean sweep of wrong answers. Filing that under other risks.',
-    'That one goes back to the Analyzing column. WIP limit exceeded.'],
+    'That one goes back to the Analyzing column. WIP limit exceeded.',
+    'Not one correct ticket. ROAM status: Owned. By all of you.',
+    'A unanimous miss. Beautiful alignment, wrong destination.',
+    'Zero correct. The Conductor is adding this to the risk board.'],
   split:[
     'A perfect split. The management review will be lively.',
-    'The carriage is divided. Somebody call the Business Owners.'],
+    'The carriage is divided. Somebody call the Business Owners.',
+    'Half the carriage went left, half went right. Classic dependency.',
+    'A dead heat between two answers. Fist of five, anyone?'],
   generic:[
     'The Conductor has seen things. Mostly uncommitted objectives.',
-    'Next stop approaching. Keep your acceptance criteria inside the carriage.'],
+    'Next stop approaching. Keep your acceptance criteria inside the carriage.',
+    'The Conductor notes: velocity is not the same as being right quickly.',
+    'Somewhere, a Business Owner just felt a disturbance.'],
   photo:[
     'Photo finish up top: {a} and {b} split by just {d} points.',
-    'The gap at the front is {d} points. Mind it, {b}.'],
+    'The gap at the front is {d} points. Mind it, {b}.',
+    'Front two separated by {d}. Photo finish cameras are rolling.'],
   comeback:[
     '{n} storms into the medals, up {k} places. Now THAT is a planning adjustment.',
-    'Comeback of the day: {n} climbing {k} spots toward the podium.'],
+    'Comeback of the day: {n} climbing {k} spots toward the podium.',
+    'Out of the fog comes {n}, up {k}. Uncommitted no longer.'],
   lastGasp:[
     '{n} punched the ticket with {t}s left on the clock. Release on the very last demand.',
-    'Doors closing... and {n} slides in with {t}s to spare.'],
+    'Doors closing... and {n} slides in with {t}s to spare.',
+    '{t}s on the clock and {n} still made the platform. Respect.'],
   packed:[
     'Everyone answered before half time. This platform is PACKED.',
-    'Full carriage, fast fingers. All tickets punched early.'],
+    'Full carriage, fast fingers. All tickets punched early.',
+    'All aboard before half time. This ART has flow.'],
   lastStop:[
     'Double points cashed! {n} banked +{p} at the final stop.',
-    'Final stop, double fare. {n} collected a mighty +{p}.']
+    'Final stop, double fare. {n} collected a mighty +{p}.',
+    'The double stop delivers. {n} pockets +{p}.',
+    'Everything doubled and {n} knew it: +{p} banked.']
 };
 const ST_QUIPS={
   lesson1:['Mindset Central reminds you: machines lack ethical judgment. Some of those answers suggest humans do too.',
-    'A growth mindset means the next stop can go better.'],
+    'A growth mindset means the next stop can go better.',
+    'Machines find patterns. Humans find excuses. Both were on display.'],
   lesson2:['WSJF Junction: shortest brains first, apparently.',
-    'The cost of delay on that round was measurable.'],
+    'The cost of delay on that round was measurable.',
+    'That round had a high cost of delay and a low cost of thinking.'],
   lesson3:['Planning Platform: that round needs a management review and problem-solving meeting.',
-    'ROAM that wrong answer: Accepted.'],
+    'ROAM that wrong answer: Accepted.',
+    'Confidence vote on that answer: two fingers, maybe three.'],
   lesson4:['Iteration Station: fail fast, learn faster.',
-    'That answer did not meet its definition of done.'],
+    'That answer did not meet its definition of done.',
+    'INVEST said Testable. That answer said otherwise.'],
   lesson5:['Inspect and Adapt Terminal: we will discuss that one in the retro.',
-    'Root cause analysis pending on that round.']
+    'Root cause analysis pending on that round.',
+    'Add it to the fishbone, under People.']
 };
-const V_RIGHT=['Ticket accepted. Story: done.','Correct! Accepted by the Product Owner.','Right on the rails.','Green signal. Carry on.'];
-const V_WRONG=['Not in the acceptance criteria.','Consider a spike next time.','Moved back to the Analyzing column.','Decommitted at the last second. Bold.','That was not in your definition of done.'];
-const V_NONE=['No ticket punched. The train waits for no one.','No answer logged. An accepted risk, apparently.'];
+const V_RIGHT=['Ticket accepted. Story: done.','Correct! Accepted by the Product Owner.','Right on the rails.','Green signal. Carry on.','Accepted on the first review.','That met every acceptance criterion.','Straight through validation to done.'];
+const V_WRONG=['Not in the acceptance criteria.','Consider a spike next time.','Moved back to the Analyzing column.','Decommitted at the last second. Bold.','That was not in your definition of done.','Returned to the backlog for refinement.','A brave hypothesis. Invalidated.','The retro will be gentle. Probably.'];
+const V_NONE=['No ticket punched. The train waits for no one.','No answer logged. An accepted risk, apparently.','The doors closed before your ticket did.','Silence is not an accepted answer type.'];
 const F_PLACE=['MVP: Most Valuable Player. Minimum viable? Never met her.','So close to gold. A very strong benefit hypothesis.','Bronze! A solid architectural runway.','Every train needs every carriage. Well ridden.'];
 
 /* ---------------- tiny utils ---------------- */
@@ -853,7 +905,8 @@ const SFX={
     tone(415,0.4,'sawtooth',0.09,0.62); tone(311,0.4,'sawtooth',0.09,0.62);},
   heart(){tone(55,0.1,'sine',0.13); tone(55,0.1,'sine',0.11,0.16);},
   tock(){tone(700,0.05,'square',0.07);},
-  punch(){tone(1250,0.04,'square',0.06); nz(0.07,0.07,0.02,900); tone(523,0.09,'triangle',0.08,0.05);}
+  punch(){tone(1250,0.04,'square',0.06); nz(0.07,0.07,0.02,900); tone(523,0.09,'triangle',0.08,0.05);},
+  milestone(){this.chug(4); tone(659,0.12,'triangle',0.09,0.4); tone(784,0.12,'triangle',0.09,0.48); tone(1047,0.3,'triangle',0.1,0.58); vibOK();}
 };
 /* ambient soundtrack (host screens only): music loop + train layer + horns, all via MASTER so mute rules it */
 const AMB={on:false,src:null,bus:null,lp:null,t1:0,t2:0,next:0,bar:0};
@@ -933,7 +986,7 @@ function vibOK(){vib([40,60,40]);}
 const S={role:null,code:null,pid:null,name:'',emoji:'🚂',game:null,off:0,offKnown:false,everConn:false,
   screen:'',phaseKey:'',revealed:{},revealRetry:{},botTimers:[],builtQ:-1,builtQP:-1,localAns:{},goPlayed:{},
   earlyT:{},qrDone:false,lastQuip:{},raf:0,trace:[],lastSnapAt:0,lastHot:0,hbT:0,
-  lenN:10,practice:false,
+  lenN:10,practice:false,bestMs:null,
   stWarn:false,acWarn:false,ckWarn:false,deckChecked:false,lastRenderErr:''};
 let db=null;
 const TS=()=>firebase.database.ServerValue.TIMESTAMP;
@@ -985,7 +1038,13 @@ const ANNOUNCE=[
   'Next departure subject to a confidence vote.',
   'Feature trains depart every PI. Do not board moving epics.',
   'For your safety, ROAM all personal risks before boarding.',
-  'Refreshments available in the Iteration Station buffet car.'
+  'Refreshments available in the Iteration Station buffet car.',
+  'A reminder that all epics must fit through the turnstile as features.',
+  'The quiet carriage is reserved for passengers on a streak.',
+  'Please report unattended dependencies to a member of staff.',
+  'Trains toward Done depart more often when batches are small.',
+  'Customers pulling value may do so from platform two.',
+  'Today the buffet car serves humble pie and estimating poker chips.'
 ];
 let annT=0, annIx=0;
 function startAnnounce(){
@@ -1356,7 +1415,13 @@ function onEnter(g,ph){
   if(ph==='reveal'){
     if(S.role==='player'){
       const me=(g.players||{})[S.pid]||{};
-      if(me.lastAnswered){ if(me.lastCorrect){SFX.right(); if(me.streak>=2)SFX.chug(me.streak);} else {SFX.wrong(); vib([120]);} }
+      if(me.lastAnswered){
+        if(me.lastCorrect){
+          SFX.right();
+          if(me.streak===3||me.streak===5)SFX.milestone();
+          else if(me.streak>=2)SFX.chug(me.streak);
+        } else {SFX.wrong(); vib([120]);}
+      }
     } else {
       try{
         const dq=deckQ(g,g.qIndex);
@@ -1377,6 +1442,7 @@ function renderHost(g,ph,entered){
     go('s-lobby');
     const L=LESSONS[g.lesson]||{};
     $('#lobbyLine').textContent='SERVICE: '+(L.ln||'')+' '+(L.name||'').toUpperCase()+' · ON TIME';
+    $('#lobWelcome').textContent=LOB_WELCOME[g.lesson]||'';
     $('#codebig').textContent=S.code;
     if(!S.qrDone){
       S.qrDone=true;
@@ -1442,7 +1508,14 @@ function renderHost(g,ph,entered){
           if(fMs==null||el2<fMs){fMs=el2; fName=(g.players&&g.players[pid]&&g.players[pid].name)||'Passenger';}
         }
       }
-      $('#rvFast').textContent=fName?('⚡ Fastest correct ticket: '+fName+' in '+(fMs/1000).toFixed(1)+'s'):'';
+      const rv=$('#rvFast'); rv.classList.remove('rec');
+      let ft=fName?('⚡ Fastest correct ticket: '+fName+' in '+(fMs/1000).toFixed(1)+'s'):'';
+      if(fMs!=null){
+        if(S.bestMs==null){S.bestMs=fMs;}
+        else if(fMs<S.bestMs){S.bestMs=fMs; ft+='   ·   🏁 NEW STATION RECORD!';
+          rv.classList.add('rec'); SFX.pop(); SFX.ding();}
+      }
+      rv.textContent=ft;
       const bars=$('#bars'); bars.textContent='';
       dq.opts.forEach((o,ix)=>{
         const b=el('div','bar i'+ix);
@@ -1509,16 +1582,18 @@ function renderPlayer(g,ph,entered){
       const fin=!!(g.deck&&i>=g.deck.length-1);
       if(!me.lastAnswered){
         $('#vEm').textContent='⏳'; $('#vTx').textContent='No answer'; $('#vTx').className='vtx';
-        $('#vPt').textContent='+0'; $('#vSt').textContent='';
+        $('#vPt').textContent='+0'; $('#vSt').textContent=''; $('#vSt').className='vst';
         $('#vQ').textContent=V_NONE[hash%V_NONE.length];
       }else if(me.lastCorrect){
         $('#vEm').textContent='✅'; $('#vTx').textContent='Correct!'; $('#vTx').className='vtx ok';
         $('#vPt').textContent='+'+(me.lastPoints||0)+((fin&&me.lastPoints)?' · x2 final stop':'');
-        $('#vSt').textContent=(me.streak>=2)?('🔥 Streak '+me.streak):'';
+        const stE=$('#vSt');
+        stE.textContent=(me.streak>=2)?((me.streak>=5?'🔥🔥':'🔥')+' Streak '+me.streak+(me.streak>=3?'!':'')):'';
+        stE.className='vst'+(me.streak>=5?' blaze big':(me.streak>=3?' blaze':''));
         $('#vQ').textContent=V_RIGHT[hash%V_RIGHT.length];
       }else{
         $('#vEm').textContent='❌'; $('#vTx').textContent='Not this time'; $('#vTx').className='vtx bad';
-        $('#vPt').textContent='+0'; $('#vSt').textContent='';
+        $('#vPt').textContent='+0'; $('#vSt').textContent=''; $('#vSt').className='vst';
         $('#vQ').textContent=V_WRONG[hash%V_WRONG.length];
       }
       try{
@@ -1746,7 +1821,7 @@ function buildReport(g){
       let good=0;
       for(const pid in am){if(am[pid].c===dq.correctDisplay)good++;}
       const rate=1-(good/Math.max(1,ids.length));
-      if(rate>worst.rate)worst={i:qi,rate};
+      if(rate>worst.rate)worst={i:qi,rate,txt:dq.text,ans:dq.opts[dq.correctDisplay]};
     });
     let fast=null,fk=null,str=null,sk=0,sumC=0;
     ids.forEach(pid=>{
@@ -1761,7 +1836,13 @@ function buildReport(g){
     if(fast)parts.push('⚡ Sharpest fingers: '+fast+' ('+(fk/1000).toFixed(1)+'s)');
     if(str&&sk>=2)parts.push('🔥 Longest streak: '+str+' ('+sk+')');
     parts.push('🎯 Class accuracy: '+acc+'%');
-    $('#report').textContent=parts.join('    ·    ');
+    let rep=parts.join('    ·    ');
+    if(worst.i>=0&&worst.txt){
+      const tq=worst.txt.length>110?(worst.txt.slice(0,107)+'...'):worst.txt;
+      const ta=String(worst.ans==null?'':worst.ans);
+      rep+='\n🧱 '+tq+'\n✔ '+(ta.length>90?(ta.slice(0,87)+'...'):ta);
+    }
+    $('#report').textContent=rep;
     $('#report').hidden=false;
   }catch(e){logErr('E28 report',e); $('#report').hidden=true;}
 }
