@@ -200,8 +200,10 @@
   .punched .big{font-size:2.6rem; display:block; margin-bottom:6px;}
 
   /* countdown overlay */
-  #cdov{position:fixed; inset:0; z-index:30; display:none; align-items:center; justify-content:center;
-    background:rgba(3,5,12,.82); backdrop-filter:blur(3px);}
+  #cdov{position:fixed; inset:0; z-index:30; display:none; flex-direction:column; gap:10px;
+    align-items:center; justify-content:center; background:#04060f;}
+  #cdpeek{font-weight:900; letter-spacing:.18em; text-transform:uppercase;
+    font-size:clamp(1rem,3vh,1.6rem); color:var(--gold); text-shadow:0 0 18px rgba(251,191,36,.55);}
   #cdov.on{display:flex;}
   #cdnum{font-weight:900; font-size:clamp(6rem,26vh,13rem);}
   #cdnum.go{color:var(--ok); text-shadow:0 0 30px rgba(52,211,153,.8);}
@@ -753,7 +755,7 @@
 
 </div>
 
-<div id="cdov"><div id="cdnum"></div></div>
+<div id="cdov"><div id="cdnum"></div><div id="cdpeek">Don't peek! 🙈</div></div>
 <div id="dblBan" class="mono" hidden>🚨 FINAL STOP · POINTS PAY DOUBLE 🚨</div>
 <div id="codeov" hidden>
   <div class="sub" style="letter-spacing:.3em;">Join with code</div>
@@ -779,7 +781,7 @@
   <span class="dot" id="conn"></span><span id="connt">connecting…</span>
   <span id="sbcode" class="mono"></span>
   <button id="muteBtn">🔊</button>
-  <button id="vtag" class="mono">SAFe&amp;SOUND v2.0 (2026-07-30)</button>
+  <button id="vtag" class="mono">SAFe&amp;SOUND v2.01 (2026-07-31)</button>
 </div>
 <div id="debug" hidden>
   <h3>🔧 Debug panel</h3>
@@ -814,7 +816,7 @@ const firebaseConfig = {
 };
 /* ===================================================================== */
 
-const APP_VERSION='v2.0 (2026-07-30)';
+const APP_VERSION='v2.01 (2026-07-31)';
 const ROOT='st_games';
 const PICK_N=10, TOP_N=10, COUNTDOWN_MS=3000, CALL_TIMEOUT=9000;
 
